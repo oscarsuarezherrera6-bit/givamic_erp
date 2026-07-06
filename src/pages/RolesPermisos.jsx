@@ -978,9 +978,7 @@ export default function RolesPermisos() {
             <PlusIcon className="w-4 h-4"/> Nueva plantilla de acceso
           </button>
         )}
-        {tab === 'usuarios' && (
-          <ModalNuevoUsuario usuarios={usuarios} rolesERP={rolesERP} areas={areas} onSave={handleAddUsuario}/>
-        )}
+        {/* El botón Agregar usuario está dentro de TabUsuarios */}
       </div>
 
       {/* Tabs */}
