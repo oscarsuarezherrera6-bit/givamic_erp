@@ -1,0 +1,13 @@
+{
+  "name": "GIVAMIC - Sistema de Gestión",
+  "short_name": "GIVAMIC",
+  "description": "Sistema Integrado de Gestión Logística",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2c5282",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

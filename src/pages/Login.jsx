@@ -1,0 +1,229 @@
+import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
+import { useApp } from '../context/AppContext'
+import { EyeIcon, EyeSlashIcon, LockClosedIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
+
+export default function Login() {
+  const { login } = useAuth()
+  const { state } = useApp()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  // Credenciales por defecto — fallback si localStorage tiene datos viejos
+  const DEFAULT_USERS = [
+    { id: 'u1', nombre: 'Admin GIVAMIC',                email: 'admin@givamic.pe',         password: 'admin123',    rol: 'Administrador' },
+    { id: 'u2', nombre: 'Oscar Suarez (Coord. Logística)', email: 'logistica@givamic.pe',   password: 'logistica123',rol: 'Coordinador Logística y Compras' },
+    { id: 'u3', nombre: 'Coord. General',                email: 'coord.general@givamic.pe', password: 'coordgen123', rol: 'Coordinador General' },
+    { id: 'u4', nombre: 'Coord. Operaciones',            email: 'coord.ops@givamic.pe',     password: 'coordops123', rol: 'Coordinador Operaciones' },
+    { id: 'u11', nombre: 'Auditor ISO',                       email: 'auditor@givamic.pe',          password: 'auditor123',  rol: 'Auditor' },
+  ]
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    await new Promise(r => setTimeout(r, 1200))
+    // Buscar en estado (localStorage) primero; si falla, usar credenciales por defecto
+    let u = state.usuarios.find(u => u.email === form.email && u.password === form.password)
+    if (!u) u = DEFAULT_USERS.find(u => u.email === form.email && u.password === form.password)
+    if (u) login(u)
+    else { setError('Correo o contraseña incorrectos'); setLoading(false) }
+  }
+
+  const fillDemo = (email, pass) => setForm({ email, password: pass })
+  const logoSrc = state.logo || state.config?.logoBase64
+
+  return (
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden"
+         style={{ background: '#071a20' }}>
+
+      {/* Blob teal — arriba izquierda */}
+      <div className="absolute top-0 left-0 w-[480px] h-[480px] rounded-full pointer-events-none"
+           style={{ background: 'radial-gradient(circle, rgba(26,175,197,0.38) 0%, transparent 68%)', transform: 'translate(-35%, -35%)' }} />
+      {/* Blob verde — abajo derecha */}
+      <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full pointer-events-none"
+           style={{ background: 'radial-gradient(circle, rgba(139,189,120,0.3) 0%, transparent 68%)', transform: 'translate(30%, 30%)' }} />
+      {/* Blob azul — centro */}
+      <div className="absolute top-1/3 right-1/3 w-72 h-72 rounded-full pointer-events-none"
+           style={{ background: 'radial-gradient(circle, rgba(80,112,168,0.18) 0%, transparent 70%)' }} />
+
+      {/* Loading overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-6"
+             style={{ background: 'rgba(7,26,32,0.9)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}>
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 rounded-full"
+                 style={{ border: '3px solid rgba(26,175,197,0.15)' }} />
+            <div className="absolute inset-0 rounded-full animate-spin"
+                 style={{ border: '3px solid transparent', borderTopColor: '#2ABFD5' }} />
+            <div className="absolute inset-2 rounded-full animate-spin"
+                 style={{ border: '2px solid transparent', borderTopColor: 'rgba(139,189,120,0.5)', animationDuration: '0.65s', animationDirection: 'reverse' }} />
+          </div>
+          <div className="text-center">
+            <p className="font-semibold text-base tracking-wide" style={{ color: '#e8f8fa' }}>Verificando acceso</p>
+            <p className="text-xs mt-1 tracking-widest" style={{ color: '#2ABFD5' }}>Sistema Integrado de Gestión</p>
+          </div>
+          <div className="flex gap-1.5 mt-1">
+            <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#2ABFD5', animationDelay: '0ms' }} />
+            <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#8BBD78', animationDelay: '150ms' }} />
+            <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: '#7A9FCC', animationDelay: '300ms' }} />
+          </div>
+        </div>
+      )}
+
+      {/* Glass card */}
+      <div className="relative z-10 w-full max-w-md mx-4 rounded-2xl p-8"
+           style={{
+             background: 'rgba(255,255,255,0.06)',
+             backdropFilter: 'blur(28px)',
+             WebkitBackdropFilter: 'blur(28px)',
+             border: '1px solid rgba(42,191,213,0.18)',
+             boxShadow: '0 32px 64px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07)'
+           }}>
+
+        {/* Logo / Header */}
+        <div className="text-center mb-7">
+          {logoSrc ? (
+            <img src={logoSrc} alt="Logo GIVAMIC" className="h-24 object-contain mx-auto mb-3" />
+          ) : (
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                 style={{ background: 'rgba(26,175,197,0.3)', border: '1px solid rgba(42,191,213,0.35)' }}>
+              <span className="font-black text-2xl" style={{ color: '#e0f8fb' }}>G</span>
+            </div>
+          )}
+          <h1 className="font-black text-xl tracking-widest" style={{ color: '#e8f8fa' }}>GIVAMIC</h1>
+          <p className="text-xs tracking-widest mt-1 uppercase" style={{ color: 'rgba(42,191,213,0.6)' }}>
+            Sistema Integrado de Gestión
+          </p>
+        </div>
+
+        <div className="mb-6" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(42,191,213,0.25), transparent)' }} />
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-2"
+                   style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Correo electrónico
+            </label>
+            <div className="relative">
+              <EnvelopeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                            style={{ color: 'rgba(42,191,213,0.5)' }} />
+              <input
+                className="w-full pl-10 pr-4 py-3 text-sm rounded-xl outline-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  color: '#e8f8fa',
+                  caretColor: '#2ABFD5'
+                }}
+                type="email"
+                placeholder="usuario@givamic.pe"
+                value={form.email}
+                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                required
+                autoComplete="email"
+                onFocus={e => e.target.style.borderColor = 'rgba(42,191,213,0.5)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.09)'}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-widest mb-2"
+                   style={{ color: 'rgba(255,255,255,0.35)' }}>
+              Contraseña
+            </label>
+            <div className="relative">
+              <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+                              style={{ color: 'rgba(42,191,213,0.5)' }} />
+              <input
+                className="w-full pl-10 pr-10 py-3 text-sm rounded-xl outline-none transition-all"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  color: '#e8f8fa',
+                  caretColor: '#2ABFD5'
+                }}
+                type={showPass ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                required
+                autoComplete="current-password"
+                onFocus={e => e.target.style.borderColor = 'rgba(42,191,213,0.5)'}
+                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.09)'}
+              />
+              <button type="button" onClick={() => setShowPass(v => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                      style={{ color: 'rgba(255,255,255,0.25)' }}
+                      tabIndex={-1}>
+                {showPass ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs"
+                 style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5' }}>
+              <span className="font-bold">!</span>{error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-xl text-sm font-semibold tracking-wide transition-all mt-2"
+            style={{
+              background: loading ? 'rgba(26,175,197,0.35)' : 'rgba(26,175,197,0.55)',
+              border: '1px solid rgba(42,191,213,0.4)',
+              color: '#e0f8fb',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
+            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = 'rgba(26,175,197,0.75)' }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = 'rgba(26,175,197,0.55)' }}
+          >
+            {loading ? 'Accediendo...' : 'Ingresar al Sistema'}
+          </button>
+        </form>
+
+        {/* Demo credentials */}
+        <div className="mt-6 rounded-xl p-4"
+             style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(42,191,213,0.12)' }}>
+          <p className="text-[10px] font-bold uppercase tracking-wider mb-2"
+             style={{ color: 'rgba(255,255,255,0.2)' }}>Accesos demo</p>
+          <div className="space-y-1">
+            {[
+              { email: 'admin@givamic.pe',        pass: 'admin123',    rol: 'Administrador' },
+              { email: 'coord.general@givamic.pe', pass: 'coordgen123', rol: 'Coord. General' },
+              { email: 'logistica@givamic.pe',     pass: 'logistica123',rol: 'Coord. Logística' },
+              { email: 'coord.ops@givamic.pe',     pass: 'coordops123', rol: 'Coord. Operaciones' },
+              { email: 'auditor@givamic.pe',         pass: 'auditor123',  rol: 'Auditor ISO' },
+            ].map(u => (
+              <button
+                key={u.email}
+                type="button"
+                onClick={() => fillDemo(u.email, u.pass)}
+                className="w-full text-left px-3 py-2 rounded-lg transition-all"
+                style={{ background: 'transparent' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(26,175,197,0.1)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <span className="text-xs font-semibold" style={{ color: '#2ABFD5' }}>{u.email}</span>
+                <span className="text-[10px] ml-2" style={{ color: 'rgba(255,255,255,0.25)' }}>/ {u.pass}</span>
+                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded"
+                      style={{ background: 'rgba(139,189,120,0.15)', color: 'rgba(139,189,120,0.8)' }}>{u.rol}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        
+        <p className="text-center text-[10px] mt-5" style={{ color: 'rgba(255,255,255,0.15)' }}>
+          GIVAMIC &copy; {new Date().getFullYear()} &mdash; Sistema Integrado de Gestión
+        </p>
+      </div>
+    </div>
+  )
+}
