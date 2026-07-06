@@ -382,7 +382,7 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
   const toast = useToast()
   const emptyForm = {
     estado: 'Borrador', prioridad: 'Media', tipo: 'Bien',
-    responsable: user?.cargo ? `${user.nombre} — ${user.cargo}` : (user?.nombre || ''),
+    responsable: user?.cargo || user?.nombre || '',
     areaSolicitante: user?.area || '', sedeId: '',
     fecha: todayISO(),
     fechaLimiteGlobal: '',

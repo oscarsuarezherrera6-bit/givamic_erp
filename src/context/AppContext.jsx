@@ -435,10 +435,22 @@ function patchMissing(parsed) {
     { id: 'u14', nombre: 'Roberto Torres',                  email: 'gerencia@givamic.pe',       password: 'gerencia123',  rol: 'Gerencia',                        rolERPId: 'rol-gerencia',  jefeDirectoId: null,  cargo: 'Gerente General',                    area: 'Gerencia',         activo: true },
   ]
   if (!parsed.usuarios) parsed.usuarios = []
-  // Upsert: solo agrega los seed users que NO existen aún (no sobreescribe ediciones del admin)
+  // Upsert: agrega seed users que no existen; también rellena cargo/area vacíos de seeds existentes
+  const seedMap = Object.fromEntries(USUARIOS_PRUEBA.map(u => [u.id, u]))
   const existingIds = new Set(parsed.usuarios.map(u => u.id))
   const missingSeeds = USUARIOS_PRUEBA.filter(u => !existingIds.has(u.id))
   if (missingSeeds.length > 0) parsed.usuarios = [...missingSeeds, ...parsed.usuarios]
+  // Rellenar cargo/area/nombre vacíos desde seed data (sin sobreescribir valores editados)
+  parsed.usuarios = parsed.usuarios.map(u => {
+    const seed = seedMap[u.id]
+    if (!seed) return u
+    return {
+      ...u,
+      cargo:  u.cargo  || seed.cargo  || u.cargo,
+      area:   u.area   || seed.area   || u.area,
+      nombre: u.nombre || seed.nombre || u.nombre,
+    }
+  })
 
   return parsed
 }
