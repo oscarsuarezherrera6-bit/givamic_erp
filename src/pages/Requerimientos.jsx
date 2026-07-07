@@ -444,7 +444,7 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
           </div>
           <div className="p-4 space-y-3">
             {/* Row 1: Prioridad | Tipo | Fecha solicitud */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-2">PRIORIDAD</label>
                 <div className="flex gap-4">
@@ -473,8 +473,8 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
               </div>
             </div>
             {/* Row 2: Resp | Área | Fecha límite | Hora límite | Sede */}
-            <div className="grid grid-cols-5 gap-3">
-              <div className="col-span-1">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">RESP. DE LA SOLICITUD</label>
                 <input className={`input ${user?.rol !== 'Administrador' ? 'bg-gray-50 cursor-default' : ''}`}
                   value={form.responsable}
@@ -482,7 +482,7 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
                   readOnly={user?.rol !== 'Administrador'}
                   placeholder="Nombre del responsable" />
               </div>
-              <div className="col-span-1">
+              <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">ÁREA SOLICITANTE</label>
                 <input className={`input ${user?.rol !== 'Administrador' ? 'bg-gray-50 cursor-default' : ''}`}
                   value={form.areaSolicitante}
@@ -498,7 +498,7 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
                 <label className="text-xs font-bold text-gray-600 block mb-1">HORA LÍMITE</label>
                 <input type="time" className="input" value={form.horaLimiteGlobal} onChange={e => setF('horaLimiteGlobal', e.target.value)} />
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-1">
                 <label className="text-xs font-bold text-gray-600 block mb-1">SEDE / ÁREA <span className="text-red-500">*</span></label>
                 <select className="input" value={form.sedeId} onChange={e => setF('sedeId', e.target.value)} required>
                   <option value="">Seleccionar sede...</option>
