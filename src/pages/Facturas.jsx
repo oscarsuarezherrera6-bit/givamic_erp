@@ -102,9 +102,21 @@ function FacturaForm({ onClose }) {
     const file = e.target.files[0]
     if (!file) return
     setLoading(true)
+
+    // 1) Adjuntar archivo siempre — esto nunca falla
+    let dataURL
+    try {
+      dataURL = await fileToDataURL(file)
+      setForm(p => ({ ...p, archivoPDF: dataURL, nombreArchivo: file.name }))
+    } catch {
+      toast('No se pudo cargar el archivo.', 'error')
+      setLoading(false); e.target.value = ''; return
+    }
+
+    // 2) Intentar extraer datos (opcional — PDF queda adjunto aunque falle)
     toast('Leyendo PDF...', 'warning')
     try {
-      const [datos, dataURL] = await Promise.all([extraerDatosFactura(file), fileToDataURL(file)])
+      const datos = await extraerDatosFactura(file)
       let proveedorId = form.proveedorId
       if (datos.rucProveedor) {
         const prov = state.proveedores.find(p => p.ruc === datos.rucProveedor)
@@ -125,11 +137,11 @@ function FacturaForm({ onClose }) {
             return { id: genId(), productoId: prod?.id || '', producto: prod?.nombre || it.descripcion, cantidad: it.cantidad, precioUnit: it.precioUnit, unidad: it.unidad || prod?.unidad || 'Unidad' }
           })
         : form.items
-      setForm(p => ({ ...p, numero: datos.numero || p.numero, proveedorId: proveedorId || p.proveedorId, fecha: datos.fecha || p.fecha, items: itemsMapped, archivoPDF: dataURL, nombreArchivo: file.name }))
+      setForm(p => ({ ...p, numero: datos.numero || p.numero, proveedorId: proveedorId || p.proveedorId, fecha: datos.fecha || p.fecha, items: itemsMapped }))
       const found = [datos.numero, datos.rucProveedor, datos.fecha, datos.items.length > 0].filter(Boolean).length
       toast(`PDF leído: ${found}/4 campos detectados${datos.items.length > 0 ? ` · ${datos.items.length} ítems` : ''}`, 'success')
     } catch {
-      toast('No se pudo leer el PDF. Completa el formulario manualmente.', 'error')
+      toast('PDF adjuntado. Completa los datos del formulario manualmente.', 'warning')
     } finally { setLoading(false); e.target.value = '' }
   }
 

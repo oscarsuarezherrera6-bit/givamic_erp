@@ -1,10 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist'
 
-// Configurar worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).href
+// Worker deshabilitado — funciona en desktop y móvil sin depender del worker URL
+pdfjsLib.GlobalWorkerOptions.workerSrc = ''
 
 /**
  * Extrae texto de un PDF y lo convierte en un objeto con datos de factura.
