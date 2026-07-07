@@ -2,7 +2,7 @@
  * Dashboard.jsx — GIVAMIC ERP
  * Diseño profesional estilo ERP moderno
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import DashboardCoordGen from './DashboardCoordGen'
 import { useApp } from '../context/AppContext'
 import { fmtMoney, fmtDate } from '../utils/helpers'
@@ -215,6 +215,15 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { puedeVer } = usePerm()
   const { user, isCoordGen } = useAuth()
+
+  // ── Responsive: detectar móvil con JS puro (bypass CSS totalmente) ──────────
+  const [winW, setWinW] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280)
+  useEffect(() => {
+    const onResize = () => setWinW(window.innerWidth)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+  const isMobile = winW < 768
 
   if (isCoordGen && !user?.rol?.includes('Administrador')) return <DashboardCoordGen />
 
@@ -431,7 +440,7 @@ export default function Dashboard() {
       )}
 
       {/* ── Row 1: 2 stat cards + 2 donuts + 1 highlight ── */}
-      <div className="grid gap-3 dash-row1" style={{ gridTemplateColumns: 'repeat(2,minmax(0,1fr))' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(5,minmax(0,1fr))' }}>
 
         {/* REQs del mes */}
         {puedeVer('requerimientos') && (
@@ -483,7 +492,7 @@ export default function Dashboard() {
 
         {/* Highlight: Gasto + Inventario */}
         {puedeVer('facturas') && (
-          <div className="col-span-2 md:col-span-1">
+          <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
           <HighlightCard
             label1="Gasto del Mes"
             value1={fmtMoney(gastoMes)}
@@ -497,7 +506,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Row 2: 4 alert cards ── */}
-      <div className="grid gap-3 dash-row2" style={{ gridTemplateColumns: 'repeat(2,minmax(0,1fr))' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))' }}>
 
         {puedeVer('epps') && (
           <StatCard
@@ -569,11 +578,11 @@ export default function Dashboard() {
       )}
 
       {/* ── Gráfico gasto + actividad reciente ── */}
-      <div className="grid gap-3 dash-row3" style={{ gridTemplateColumns: '1fr' }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,minmax(0,1fr))' }}>
 
         {/* Gasto mensual — 2 cols en desktop, full en móvil */}
         {puedeVer('facturas') && (
-          <div className="col-span-1 md:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4" style={{ gridColumn: isMobile ? 'auto' : 'span 2 / span 2' }}>
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p className="text-sm font-bold text-gray-800">Gasto de Compras</p>
