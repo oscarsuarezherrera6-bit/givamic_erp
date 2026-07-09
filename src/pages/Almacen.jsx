@@ -839,8 +839,8 @@ export default function Almacen() {
 
       {/* ══ STOCK ══ */}
       {tab === TAB_STOCK && (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full text-sm min-w-[640px]">
             <thead><tr className="bg-gray-50 border-b border-gray-100">
               <th className="table-th">Producto</th>
               <th className="table-th">Código</th>
@@ -918,8 +918,8 @@ export default function Almacen() {
 
       {/* ══ INGRESOS ══ */}
       {tab === TAB_INGRESOS && (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full text-sm min-w-[500px]">
             <thead><tr className="bg-gray-50 border-b border-gray-100">
               <th className="table-th">N° Ingreso</th>
               <th className="table-th">Fecha</th>
@@ -976,8 +976,8 @@ export default function Almacen() {
           </div>
 
           {/* Tabla vales */}
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="card overflow-x-auto">
+            <table className="w-full text-sm min-w-[580px]">
               <thead><tr className="bg-gray-50 border-b border-gray-100">
                 <th className="table-th">N° Vale</th>
                 <th className="table-th">Fecha</th>
@@ -1014,8 +1014,8 @@ export default function Almacen() {
 
 
           {/* ── Traslados entre Sedes ── */}
-          <div className="card overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div className="card overflow-x-auto">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 min-w-[520px]">
               <div>
                 <h2 className="text-sm font-semibold text-gray-800">Traslados entre Sedes</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Movimientos de productos de una sede a otra</p>
@@ -1025,7 +1025,7 @@ export default function Almacen() {
                 <ArrowUpIcon className="w-3.5 h-3.5 rotate-90"/>Nuevo Traslado
               </button>
             </div>
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[520px]">
               <thead><tr className="bg-gray-50 border-b border-gray-100">
                 <th className="table-th">N°</th>
                 <th className="table-th">Fecha</th>
