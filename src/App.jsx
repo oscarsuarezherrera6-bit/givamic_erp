@@ -24,6 +24,7 @@ import ReqPago from './pages/ReqPago'
 import Uniformes from './pages/Uniformes'
 import Perfil from './pages/Perfil'
 import EvaluacionProveedores from './pages/EvaluacionProveedores'
+import RRHH from './pages/RRHH'
 import CuentasPorPagar from './pages/CuentasPorPagar'
 import Reportes from './pages/Reportes'
 import RolesPermisos from './pages/RolesPermisos'
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="perfil"                 element={<Perfil />} />
         <Route path="auditoria"              element={<PermRoute modulo="auditoria"><Auditoria /></PermRoute>} />
         <Route path="evaluacion-proveedores" element={<PermRoute modulo="evaluacion-proveedores"><EvaluacionProveedores /></PermRoute>} />
+        <Route path="rrhh"                    element={<PermRoute modulo="rrhh"><RRHH /></PermRoute>} />
         <Route path="cuentas-por-pagar"      element={<PermRoute modulo="cuentas-por-pagar"><CuentasPorPagar /></PermRoute>} />
         <Route path="reportes"               element={<PermRoute modulo="reportes"><Reportes /></PermRoute>} />
         <Route path="roles-permisos"         element={<PermRoute modulo="roles-permisos"><RolesPermisos /></PermRoute>} />

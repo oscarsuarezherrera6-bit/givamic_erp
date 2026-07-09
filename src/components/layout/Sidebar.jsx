@@ -50,6 +50,12 @@ const GRUPOS = [
     ]
   },
   {
+    label: 'RRHH',
+    items: [
+      { to: '/rrhh', label: 'Recursos Humanos', Icon: UserGroupIcon, modulo: 'rrhh' },
+    ]
+  },
+  {
     label: 'FINANZAS',
     items: [
       { to: '/req-pago',               label: 'Req. de Pago',         Icon: CurrencyDollarIcon,           modulo: 'req-pago' },

@@ -67,8 +67,9 @@ const AUDIT_DESC = {
   ADD_COTIZACION:         () => `Nueva cotizacion creada`,
   UPDATE_COTIZACION:      () => `Actualizó cotizacion`,
   DELETE_COTIZACION:      () => `Eliminó cotizacion`,
-  ADD_SOLICITUD_COT:      a => `Nueva Solicitud de Cotización: ${a.payload?.numero||''}`,
-  UPDATE_SOLICITUD_COT:   () => `Actualizó Solicitud de Cotización`,
+  ADD_SOLICITUD_COT:        a => `Nueva Solicitud de Cotización: ${a.payload?.numero||''}`,
+  UPDATE_SOLICITUD_COT:     () => `Actualizó Solicitud de Cotización`,
+  ENVIAR_SC_APROBACION:     a => `SC ${a.id||''} enviada a aprobación de Gerencia`,
   APROBAR_SOLICITUD_COT:  a => `Solicitud Cot ${a.numero||''} aprobada — proveedor ganador seleccionado`,
   SOLICITUD_COT_A_OC:     a => `Solicitud Cot convertida a OC ${a.ocNumero||''}`,
   APROBAR_COT_GANADOR:    a => `Cotización comparativa — ganador aprobado: proveedor ${a.proveedorNombre||''}`,
@@ -114,8 +115,9 @@ const AUDIT_MODULO = {
   ADD_TRASLADO_SEDES:'Almacen', DELETE_TRASLADO_SEDES:'Almacen',
   ADD_SALIDA_ALMACEN:'Almacen', DELETE_SALIDA_ALMACEN:'Almacen',
   ADD_COTIZACION:'Cotizaciones', UPDATE_COTIZACION:'Cotizaciones', DELETE_COTIZACION:'Cotizaciones',
-  ADD_SOLICITUD_COT:'Cotizaciones', UPDATE_SOLICITUD_COT:'Cotizaciones', APROBAR_SOLICITUD_COT:'Cotizaciones',
-  SOLICITUD_COT_A_OC:'Cotizaciones', APROBAR_COT_GANADOR:'Cotizaciones', COTIZACION_A_OC:'Cotizaciones',
+  ADD_SOLICITUD_COT:'Cotizaciones', UPDATE_SOLICITUD_COT:'Cotizaciones', ENVIAR_SC_APROBACION:'Cotizaciones',
+  APROBAR_SOLICITUD_COT:'Cotizaciones', SOLICITUD_COT_A_OC:'Cotizaciones',
+  APROBAR_COT_GANADOR:'Cotizaciones', COTIZACION_A_OC:'Cotizaciones',
   ADD_REQUERIMIENTO:'Requerimientos', UPDATE_REQUERIMIENTO:'Requerimientos',
   DELETE_REQUERIMIENTO:'Requerimientos', APROBAR_REQUERIMIENTO:'Requerimientos',
   APROBAR_REQ_JEFE:'Requerimientos',
@@ -180,6 +182,19 @@ function patchMissing(parsed) {
   if (!parsed.inventario) parsed.inventario = []
   if (!parsed.movimientos) parsed.movimientos = []
   if (!parsed.supervisores) parsed.supervisores = []
+  if (!parsed.empresasGrupo) parsed.empresasGrupo = []
+  if (!parsed.clientesRRHH) parsed.clientesRRHH = []
+  if (!parsed.historialAsignaciones) parsed.historialAsignaciones = []
+  // Parchar usuarios: añadir campos de asignación RRHH si no existen
+  if (parsed.usuarios) {
+    parsed.usuarios = parsed.usuarios.map(u => ({
+      empresaGrupoId: null,
+      clienteRRHHId: null,
+      localRRHHId: null,
+      fechaInicioAsignacion: null,
+      ...u
+    }))
+  }
   if (!parsed.areas) parsed.areas = [
     { id: 'ar1', nombre: 'Operaciones',      activo: true },
     { id: 'ar2', nombre: 'Recursos Humanos', activo: true },
@@ -300,8 +315,8 @@ function patchMissing(parsed) {
   const permisosDefecto = {
     'Coordinador Logística y Compras': { modulos: ['dashboard','requerimientos','cotizaciones','ordenes-compra','facturas','conformidades','almacen','uniformes','maquinas','epps','req-pago','cuentas-por-pagar','evaluacion-proveedores'], acciones: ['crear','editar','anular','aprobar','ver_precios','exportar'] },
     'Administrador de Empresa':        { modulos: ['dashboard','ordenes-compra','req-pago','auditoria'], acciones: ['aprobar','ver_precios','exportar'] },
-    'Jefe RRHH':                       { modulos: ['dashboard','requerimientos'], acciones: ['crear','aprobar','exportar'] },
-    'Asistente RRHH':                  { modulos: ['dashboard','requerimientos'], acciones: ['crear','exportar'] },
+    'Jefe RRHH':                       { modulos: ['dashboard','requerimientos','rrhh'], acciones: ['crear','aprobar','exportar'] },
+    'Asistente RRHH':                  { modulos: ['dashboard','requerimientos','rrhh'], acciones: ['crear','exportar'] },
     'Jefe SSOMA':                      { modulos: ['dashboard','requerimientos','epps','evaluacion-proveedores'], acciones: ['crear','aprobar','exportar'] },
     'Asistente SSOMA':                 { modulos: ['dashboard','requerimientos','epps'], acciones: ['crear','exportar'] },
     'Asistente Logística':             { modulos: ['dashboard','uniformes','epps'], acciones: ['crear','editar','exportar'] },
@@ -313,7 +328,7 @@ function patchMissing(parsed) {
   })
   // Actualizar permisos de roles existentes con módulos nuevos si faltan
   if (parsed.configPermisos['Administrador'] && !parsed.configPermisos['Administrador'].modulos.includes('uniformes')) {
-    parsed.configPermisos['Administrador'].modulos.push('uniformes','cuentas-por-pagar','evaluacion-proveedores')
+    parsed.configPermisos['Administrador'].modulos.push('uniformes','cuentas-por-pagar','evaluacion-proveedores','rrhh')
   }
   // Migrar productos kit a IDs estables si aún tienen IDs random
   const kitStable = [
@@ -381,6 +396,13 @@ function patchMissing(parsed) {
   }
   // Siempre forzar permisos correctos para Facturación
   parsed.configPermisos['Facturación'] = { modulos: ['dashboard','req-pago','cuentas-por-pagar'], acciones: ['crear','editar','exportar'] }
+  // Migrar Jefe RRHH y Asistente RRHH: agregar módulo rrhh si no existe
+  if (parsed.configPermisos['Jefe RRHH'] && !parsed.configPermisos['Jefe RRHH'].modulos.includes('rrhh')) {
+    parsed.configPermisos['Jefe RRHH'].modulos.push('rrhh')
+  }
+  if (parsed.configPermisos['Asistente RRHH'] && !parsed.configPermisos['Asistente RRHH'].modulos.includes('rrhh')) {
+    parsed.configPermisos['Asistente RRHH'].modulos.push('rrhh')
+  }
   // Forzar módulos correctos para Contador (sin conformidades ni facturas)
   if (parsed.configPermisos['Contador']) {
     parsed.configPermisos['Contador'].modulos = ['dashboard','facturas','req-pago','cuentas-por-pagar']
@@ -433,14 +455,14 @@ function patchMissing(parsed) {
     { id: 'u2',  nombre: 'Oscar Mendoza',                   email: 'logistica@givamic.pe',      password: 'logistica123', rol: 'Coordinador Logística y Compras', rolERPId: 'rol-coord-log', jefeDirectoId: 'u1',  cargo: 'Coordinador de Logística y Compras', area: 'Logística',        activo: true },
     { id: 'u3',  nombre: 'Administradora de Empresa',       email: 'administradora@givamic.pe', password: 'empresa123',   rol: 'Administrador de Empresa',        rolERPId: 'rol-gerencia',  jefeDirectoId: 'u1',  cargo: 'Administradora de Empresa',          area: 'Administración',   activo: true },
     { id: 'u4',  nombre: 'Contador',                        email: 'contador@givamic.pe',       password: 'conta123',     rol: 'Contador',                        rolERPId: 'rol-colab',     jefeDirectoId: 'u3',  cargo: 'Contador General',                   area: 'Administración',   activo: true },
-    { id: 'u5',  nombre: 'María García',                    email: 'coord.general@givamic.pe',  password: 'coordgen123',  rol: 'Coordinador General',             rolERPId: 'rol-coord-gen', jefeDirectoId: 'u1',  cargo: 'Coordinador General',                area: 'Operaciones',      activo: true },
+    { id: 'u5',  nombre: 'María García',                    email: 'coord.general@givamic.pe',  password: 'coordgen123',  rol: 'Coordinador General',             rolERPId: 'rol-coord-gen', jefeDirectoId: 'u1',  cargo: 'Coordinador General',                area: 'Operaciones',      activo: true, empresaGrupoId: 'eg1', clienteRRHHId: 'cr3', localRRHHId: 'lo3a', fechaInicioAsignacion: '2025-09-01', esTemporal: false, fechaFinPrevista: null },
     { id: 'u6',  nombre: 'Juan Pérez',                      email: 'coord.ops@givamic.pe',      password: 'coordops123',  rol: 'Coordinador Operaciones',         rolERPId: 'rol-jefe-area', jefeDirectoId: 'u1',  cargo: 'Coordinador de Operaciones',         area: 'Operaciones',      activo: true },
     { id: 'u7',  nombre: 'Jefe RRHH',                       email: 'jefe.rrhh@givamic.pe',      password: 'jrrhh123',     rol: 'Jefe RRHH',                       rolERPId: 'rol-jefe-area', jefeDirectoId: 'u1',  cargo: 'Jefe de Recursos Humanos',           area: 'Recursos Humanos', activo: true },
     { id: 'u8',  nombre: 'Ana López',                       email: 'asist.rrhh@givamic.pe',     password: 'arrhh123',     rol: 'Asistente RRHH',                  rolERPId: 'rol-colab',     jefeDirectoId: 'u7',  cargo: 'Asistente RRHH',                     area: 'Recursos Humanos', activo: true },
-    { id: 'u9',  nombre: 'Asistente Logística',             email: 'asist.log@givamic.pe',      password: 'alog123',      rol: 'Asistente Logística',             rolERPId: 'rol-colab',     jefeDirectoId: 'u2',  cargo: 'Asistente de Logística',             area: 'Logística',        activo: true },
+    { id: 'u9',  nombre: 'Asistente Logística',             email: 'asist.log@givamic.pe',      password: 'alog123',      rol: 'Asistente Logística',             rolERPId: 'rol-colab',     jefeDirectoId: 'u2',  cargo: 'Asistente de Logística',             area: 'Logística',        activo: true, empresaGrupoId: 'eg1', clienteRRHHId: 'cr1', localRRHHId: 'lo1a', fechaInicioAsignacion: '2025-06-01', esTemporal: false, fechaFinPrevista: null },
     { id: 'u10', nombre: 'Asistente de Facturación',        email: 'facturacion@givamic.pe',    password: 'factura123',   rol: 'Facturación',                     rolERPId: 'rol-colab',     jefeDirectoId: 'u1',  cargo: 'Asistente de Facturación',           area: 'Facturación',      activo: true },
     { id: 'u11', nombre: 'Auditor ISO',                     email: 'auditor@givamic.pe',        password: 'auditor123',   rol: 'Auditor',                         rolERPId: 'rol-auditor',   jefeDirectoId: 'u1',  cargo: 'Auditor ISO',                        area: 'SOMA y SIG',       activo: true },
-    { id: 'u12', nombre: 'Carlos Ruiz',                     email: 'soma@givamic.pe',           password: 'soma123',      rol: 'Coordinador Operaciones',         rolERPId: 'rol-colab',     jefeDirectoId: 'u6',  cargo: 'Asistente SOMA',                     area: 'SOMA y SIG',       activo: true },
+    { id: 'u12', nombre: 'Carlos Ruiz',                     email: 'soma@givamic.pe',           password: 'soma123',      rol: 'Coordinador Operaciones',         rolERPId: 'rol-colab',     jefeDirectoId: 'u6',  cargo: 'Asistente SOMA',                     area: 'SOMA y SIG',       activo: true, empresaGrupoId: 'eg2', clienteRRHHId: 'cr4', localRRHHId: 'lo4a', fechaInicioAsignacion: '2026-01-15', esTemporal: false, fechaFinPrevista: null },
     { id: 'u13', nombre: 'Patricia Luna',                   email: 'pluna@givamic.pe',          password: 'pluna123',     rol: 'Coordinador Logística y Compras', rolERPId: 'rol-coord-log', jefeDirectoId: 'u2',  cargo: 'Coordinadora de Logística',          area: 'Logística',        activo: true },
     { id: 'u14', nombre: 'Roberto Torres',                  email: 'gerencia@givamic.pe',       password: 'gerencia123',  rol: 'Gerencia',                        rolERPId: 'rol-gerencia',  jefeDirectoId: null,  cargo: 'Gerente General',                    area: 'Gerencia',         activo: true },
   ]
@@ -831,7 +853,13 @@ function reducer(state, action) {
     case 'UPDATE_SOLICITUD_COT':
       next = { ...state, solicitudesCotizacion: (state.solicitudesCotizacion||[]).map(sc => sc.id === action.id ? { ...sc, ...action.payload } : sc) }; break
 
-    // Aprueba ganador en SC única (modo unica) o comparativa con 1 proveedor ya ingresado
+    // Coordinador envía SC a aprobación de Gerencia/Admin
+    case 'ENVIAR_SC_APROBACION':
+      next = { ...state, solicitudesCotizacion: (state.solicitudesCotizacion||[]).map(sc =>
+        sc.id === action.id ? { ...sc, estado: 'En Aprobación', enviadoAprobacionEn: todayISO() } : sc
+      ) }; break
+
+    // Gerencia/Admin aprueba ganador
     case 'APROBAR_SOLICITUD_COT':
       next = { ...state, solicitudesCotizacion: (state.solicitudesCotizacion||[]).map(sc =>
         sc.id === action.id ? { ...sc, estado: 'Aprobada', aprobadoEn: todayISO(), ...action.payload } : sc
@@ -843,22 +871,27 @@ function reducer(state, action) {
       if (!sc) { next = state; break }
       const nOC = (state.ultimoOC || 0) + 1
       const ocNum = 'OC-' + String(nOC).padStart(4, '0')
+      const winnerIdx = sc.proveedorGanadorIdx ?? 0
+      const winnerProv = (sc.proveedores||[])[winnerIdx] || {}
+      const scItems = (sc.items||[]).map(it => {
+        const precio = Number((it.precios||[])[winnerIdx] || it.precioUnitario || 0)
+        return { ...it, precioUnit: precio, total: (it.cantidad||0) * precio }
+      })
+      const scNeto = scItems.reduce((s, it) => s + (it.total||0), 0)
       const newOC = {
         id: genId(), numero: ocNum,
-        estado: 'Pendiente', creadoEn: todayISO(),
+        estado: 'Aprobada', creadoEn: todayISO(),
+        aprobadaPorCotizacion: true, aprobadoEn: todayISO(),
+        aprobadoPor: 'Gerencia (vía SC)',
         solcotId: sc.id, solcotNumero: sc.numero,
-        proveedor: sc.proveedorNombre || '',
-        proveedorId: sc.proveedorId || '',
+        proveedor: sc.proveedorNombre || winnerProv.razonSocial || winnerProv.nombre || '',
+        proveedorId: sc.proveedorId || winnerProv.id || '',
         empresaId: sc.empresaId || '',
         moneda: sc.moneda || 'PEN',
-        items: (sc.items||[]).map(it => ({
-          ...it,
-          precioUnit: it.precioUnitario || 0,
-          total: (it.cantidad||0) * (it.precioUnitario||0)
-        })),
-        totalNeto: (sc.items||[]).reduce((s, it) => s + (it.cantidad||0)*(it.precioUnitario||0), 0),
-        totalIGV:  (sc.items||[]).reduce((s, it) => s + (it.cantidad||0)*(it.precioUnitario||0), 0) * 0.18,
-        totalGeneral: (sc.items||[]).reduce((s, it) => s + (it.cantidad||0)*(it.precioUnitario||0), 0) * 1.18,
+        items: scItems,
+        totalNeto: scNeto,
+        totalIGV:  scNeto * 0.18,
+        totalGeneral: scNeto * 1.18,
         ...(action.payload || {})
       }
       const scUpd = (state.solicitudesCotizacion||[]).map(s =>
@@ -889,21 +922,25 @@ function reducer(state, action) {
       const prov = (cot.proveedores||[])[idx] || {}
       const nOC2 = (state.ultimoOC || 0) + 1
       const ocNum2 = 'OC-' + String(nOC2).padStart(4, '0')
+      const cotItems = (cot.items||[]).map(it => {
+        const precio = (it.precios||[])[idx] || 0
+        return { ...it, precioUnit: precio, total: (it.cantidad||0) * precio }
+      })
+      const cotNeto = cotItems.reduce((s, it) => s + (it.total||0), 0)
       const newOC2 = {
         id: genId(), numero: ocNum2,
-        estado: 'Pendiente', creadoEn: todayISO(),
+        estado: 'Aprobada', creadoEn: todayISO(),
+        aprobadaPorCotizacion: true, aprobadoEn: todayISO(),
+        aprobadoPor: 'Gerencia (vía Cotización)',
         cotId: cot.id, cotNumero: cot.numero,
-        proveedor: prov.nombre || '',
+        proveedor: prov.nombre || prov.razonSocial || '',
         proveedorId: prov.id || '',
         empresaId: cot.empresaId || '',
         moneda: cot.moneda || 'PEN',
-        items: (cot.items||[]).map(it => {
-          const precio = (it.precios||[])[idx] || 0
-          return { ...it, precioUnit: precio, total: (it.cantidad||0) * precio }
-        }),
-        totalNeto: (cot.items||[]).reduce((s, it) => s + (it.cantidad||0)*((it.precios||[])[idx]||0), 0),
-        totalIGV:  (cot.items||[]).reduce((s, it) => s + (it.cantidad||0)*((it.precios||[])[idx]||0), 0) * 0.18,
-        totalGeneral: (cot.items||[]).reduce((s, it) => s + (it.cantidad||0)*((it.precios||[])[idx]||0), 0) * 1.18,
+        items: cotItems,
+        totalNeto: cotNeto,
+        totalIGV:  cotNeto * 0.18,
+        totalGeneral: cotNeto * 1.18,
         ...(action.payload || {})
       }
       const cotUpd = (state.cotizaciones||[]).map(c =>
@@ -1345,6 +1382,119 @@ function reducer(state, action) {
       next = { ...state, evaluacionesProveedor: (state.evaluacionesProveedor||[]).map(e => e.id===action.id ? { ...e, ...action.payload } : e) }; break
     case 'DELETE_EVALUACION_PROV':
       next = { ...state, evaluacionesProveedor: (state.evaluacionesProveedor||[]).filter(e => e.id!==action.id) }; break
+
+    // ── Empresas del Grupo (RRHH) ────────────────────────────────────────
+    case 'ADD_EMPRESA_GRUPO':
+      next = { ...state, empresasGrupo: [...(state.empresasGrupo||[]), { id: genId(), activo: true, ...action.payload }] }; break
+    case 'UPDATE_EMPRESA_GRUPO':
+      next = { ...state, empresasGrupo: (state.empresasGrupo||[]).map(e => e.id===action.id ? { ...e, ...action.payload } : e) }; break
+    case 'DELETE_EMPRESA_GRUPO':
+      next = { ...state, empresasGrupo: (state.empresasGrupo||[]).filter(e => e.id!==action.id) }; break
+
+    // ── Clientes RRHH ─────────────────────────────────────────────────────
+    case 'ADD_CLIENTE_RRHH':
+      next = { ...state, clientesRRHH: [...(state.clientesRRHH||[]), { id: genId(), activo: true, locales: [], ...action.payload }] }; break
+    case 'UPDATE_CLIENTE_RRHH':
+      next = { ...state, clientesRRHH: (state.clientesRRHH||[]).map(c => c.id===action.id ? { ...c, ...action.payload } : c) }; break
+    case 'DELETE_CLIENTE_RRHH':
+      next = { ...state, clientesRRHH: (state.clientesRRHH||[]).filter(c => c.id!==action.id) }; break
+    case 'ADD_LOCAL_RRHH': {
+      next = { ...state, clientesRRHH: (state.clientesRRHH||[]).map(c =>
+        c.id===action.clienteId
+          ? { ...c, locales: [...(c.locales||[]), { id: genId(), activo: true, ...action.payload }] }
+          : c
+      ) }; break
+    }
+    case 'UPDATE_LOCAL_RRHH': {
+      next = { ...state, clientesRRHH: (state.clientesRRHH||[]).map(c =>
+        c.id===action.clienteId
+          ? { ...c, locales: (c.locales||[]).map(l => l.id===action.id ? { ...l, ...action.payload } : l) }
+          : c
+      ) }; break
+    }
+    case 'DELETE_LOCAL_RRHH': {
+      next = { ...state, clientesRRHH: (state.clientesRRHH||[]).map(c =>
+        c.id===action.clienteId
+          ? { ...c, locales: (c.locales||[]).filter(l => l.id!==action.id) }
+          : c
+      ) }; break
+    }
+
+    // ── Asignación / Rotación de Personal ────────────────────────────────
+    case 'CAMBIAR_ASIGNACION': {
+      // action: { usuarioId, empresaGrupoId, clienteRRHHId, localRRHHId, fechaInicio, esTemporal, fechaFinPrevista, motivo, registradoPor }
+      const anteriorU = (state.usuarios||[]).find(u => u.id===action.usuarioId)
+      const histEntry = {
+        id: genId(),
+        usuarioId: action.usuarioId,
+        fecha: todayISO(),
+        empresaGrupoIdAnterior: anteriorU?.empresaGrupoId || null,
+        clienteRRHHIdAnterior:  anteriorU?.clienteRRHHId  || null,
+        localRRHHIdAnterior:    anteriorU?.localRRHHId    || null,
+        empresaGrupoIdNuevo:    action.empresaGrupoId,
+        clienteRRHHIdNuevo:     action.clienteRRHHId,
+        localRRHHIdNuevo:       action.localRRHHId,
+        fechaInicio:            action.fechaInicio || todayISO(),
+        esTemporal:             action.esTemporal || false,
+        fechaFinPrevista:       action.fechaFinPrevista || null,
+        motivo:                 action.motivo || '',
+        registradoPor:          action.registradoPor || '',
+      }
+      next = {
+        ...state,
+        usuarios: (state.usuarios||[]).map(u => u.id===action.usuarioId
+          ? { ...u,
+              empresaGrupoId:       action.empresaGrupoId,
+              clienteRRHHId:        action.clienteRRHHId,
+              localRRHHId:          action.localRRHHId,
+              fechaInicioAsignacion: action.fechaInicio || todayISO(),
+              esTemporal:           action.esTemporal || false,
+              fechaFinPrevista:     action.fechaFinPrevista || null,
+            }
+          : u
+        ),
+        historialAsignaciones: [...(state.historialAsignaciones||[]), histEntry],
+      }; break
+    }
+
+    case 'CONFIRMAR_RETORNO': {
+      // Retorno desde rotación temporal: restaura asignación anterior
+      const entrada = (state.historialAsignaciones||[]).find(h => h.id===action.historialId)
+      if (!entrada) { next = state; break }
+      const retEntry = {
+        id: genId(),
+        usuarioId: entrada.usuarioId,
+        fecha: todayISO(),
+        empresaGrupoIdAnterior: entrada.empresaGrupoIdNuevo,
+        clienteRRHHIdAnterior:  entrada.clienteRRHHIdNuevo,
+        localRRHHIdAnterior:    entrada.localRRHHIdNuevo,
+        empresaGrupoIdNuevo:    entrada.empresaGrupoIdAnterior,
+        clienteRRHHIdNuevo:     entrada.clienteRRHHIdAnterior,
+        localRRHHIdNuevo:       entrada.localRRHHIdAnterior,
+        fechaInicio:            todayISO(),
+        esTemporal:             false,
+        fechaFinPrevista:       null,
+        motivo:                 action.motivo || 'Retorno desde rotación temporal',
+        registradoPor:          action.registradoPor || '',
+      }
+      next = {
+        ...state,
+        usuarios: (state.usuarios||[]).map(u => u.id===entrada.usuarioId
+          ? { ...u,
+              empresaGrupoId:       entrada.empresaGrupoIdAnterior,
+              clienteRRHHId:        entrada.clienteRRHHIdAnterior,
+              localRRHHId:          entrada.localRRHHIdAnterior,
+              fechaInicioAsignacion: todayISO(),
+              esTemporal:           false,
+              fechaFinPrevista:     null,
+            }
+          : u
+        ),
+        historialAsignaciones: (state.historialAsignaciones||[]).map(h =>
+          h.id===action.historialId ? { ...h, retornoConfirmado: true, fechaRetorno: todayISO() } : h
+        ).concat([retEntry]),
+      }; break
+    }
 
     default: next = state
   }
