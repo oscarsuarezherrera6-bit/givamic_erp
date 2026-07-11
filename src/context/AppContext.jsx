@@ -1528,7 +1528,19 @@ function reducer(state, action) {
     default: next = state
   }
   const { _lastVale, ...toSave } = next
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      try {
+        const slim = {
+          ...toSave,
+          facturas: (toSave.facturas || []).map(({ archivoPDF, ...f }) => f),
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+      } catch { /* ignore */ }
+    }
+  }
   return next
 }
 
@@ -1781,7 +1793,16 @@ export function AppProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)) } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        try {
+          const slim = { ...state, facturas: (state.facturas || []).map(({ archivoPDF, ...f }) => f) }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(slim))
+        } catch { /* ignore */ }
+      }
+    }
   }, [state])
 
   // Listener para eventos de auditoría de login/logout (disparados por AuthContext)
