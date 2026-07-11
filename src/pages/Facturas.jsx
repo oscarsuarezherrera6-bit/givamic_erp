@@ -611,4 +611,19 @@ export default function Facturas() {
                   </tr>
                 )
               })}
-     
+              {filtered.length === 0 && <tr><td colSpan={10} className="table-td text-center text-gray-400 py-8">Sin resultados</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      {showForm && <Modal title="Nueva Factura de Compra" onClose={() => setShowForm(false)} wide>
+        <FacturaForm onClose={() => setShowForm(false)} />
+      </Modal>}
+      {detail && <Modal title={`Factura ${detail.numero}`} onClose={() => setDetail(null)} wide>
+        <FacturaDetail factura={detail} onClose={() => setDetail(null)} />
+      </Modal>}
+    </div>
+  )
+}
