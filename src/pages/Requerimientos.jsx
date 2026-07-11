@@ -679,9 +679,7 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
   const [comentarioPaso1, setComentarioPaso1] = useState('')
   const [comentarioJefe, setComentarioJefe] = useState('')
   const [motivoRechazo, setMotivoRechazo] = useState('')
-  const [aprobNombreJefe, setAprobNombreJefe] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('givamic_user'))?.nombre || '' } catch { return '' }
-  })
+  const [aprobNombreJefe, setAprobNombreJefe] = useState(user?.nombre || '')
   const [itemsJefe, setItemsJefe] = useState(() =>
     (req.items || []).map(it => ({
       itemId: it.id,
@@ -705,10 +703,8 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
   const [motivoRechazoGerencia, setMotivoRechazoGerencia] = useState('')
   const [motivoPostergacion, setMotivoPostergacion] = useState('')
   const [aprobComment, setAprobComment] = useState('')
-  const [aprobNombre, setAprobNombre] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('givamic_user'))?.nombre || '' } catch { return '' }
-  })
-  const [aprobCargo, setAprobCargo] = useState('')
+  const [aprobNombre, setAprobNombre] = useState(user?.nombre || '')
+  const [aprobCargo, setAprobCargo] = useState(user?.cargo || '')
   const [proveedorOCId, setProveedorOCId] = useState('')
   const [itemsAprob, setItemsAprob] = useState(() =>
     (req.items || []).map(it => {
@@ -892,8 +888,8 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
           {/* Nombre del aprobador + comentario global */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 block mb-1">Tu nombre (Coord. General) *</label>
-              <input className="input text-sm" value={aprobNombreJefe} onChange={e => setAprobNombreJefe(e.target.value)} placeholder="Nombre completo" />
+              <label className="text-xs font-medium text-gray-600 block mb-1">Coordinador General</label>
+              <input className="input text-sm bg-gray-50 text-gray-700 cursor-default" value={aprobNombreJefe} readOnly />
             </div>
             <div>
               <label className="text-xs font-medium text-gray-600 block mb-1">Comentario general (opcional)</label>
@@ -1416,11 +1412,11 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
           <div className="grid grid-cols-2 gap-3 border border-gray-200 rounded-xl p-3 bg-white">
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Aprobado por — Apellidos y Nombres</label>
-              <input className="input text-sm" value={aprobNombre} onChange={e => setAprobNombre(e.target.value)} placeholder="Nombre del aprobador" />
+              <input className="input text-sm bg-gray-50 text-gray-700 cursor-default" value={aprobNombre} readOnly />
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-600 block mb-1">Cargo</label>
-              <input className="input text-sm" value={aprobCargo} onChange={e => setAprobCargo(e.target.value)} placeholder="Cargo del aprobador" />
+              <input className="input text-sm bg-gray-50 text-gray-700 cursor-default" value={aprobCargo} readOnly />
             </div>
           </div>
           <div>
