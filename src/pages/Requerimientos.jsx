@@ -4,7 +4,6 @@ import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/layout/Toast'
 import PageHeader from '../components/common/PageHeader'
-import ExportMenu, { useSelection, Checkbox } from '../components/common/ExportMenu'
 import { fmtDate, genId, todayISO } from '../utils/helpers'
 import { generarPDFRequerimiento } from '../utils/pdfRequerimiento'
 import Confirm from '../components/common/Confirm'
@@ -246,31 +245,15 @@ function ReqList({ reqs, sedes, onNew, onView, onEdit, onConsolidar, isAdmin, is
   const limpiar = () => { setSearch(''); setFEstado(''); setFPrio(''); setFSede(''); setFTipo(''); setFDesde(''); setFHasta('') }
   const hayFiltro = search || fEstado || fPrio || fSede || fTipo || fDesde || fHasta
 
-  const COLS = [
-    { header: 'N° RQ', key: 'numero' },
-    { header: 'Fecha', key: 'fecha' },
-    { header: 'Responsable', key: 'responsable' },
-    { header: 'Área', key: 'areaSolicitante' },
-    { header: 'Sede', key: r => sedeMap[r.sedeId] || '' },
-    { header: 'Tipo', key: 'tipo' },
-    { header: 'Prioridad', key: 'prioridad' },
-    { header: 'Estado', key: 'estado' },
-    { header: 'Ítems', key: r => r.items?.length || 0 },
-  ]
-  const { selected, toggleOne, toggleAll, clearSelection, isSelected, allSelected, someSelected } = useSelection(filtrados)
-
   return (
     <div className="space-y-4">
       <PageHeader
         title="Requerimientos de Bienes y Servicios"
         subtitle={`${reqs.length} registros · ${pendAprobacion} pendiente${pendAprobacion !== 1 ? 's' : ''} de aprobación`}
         action={
-          <div className="flex items-center gap-2">
-            <ExportMenu modulo="Requerimientos" data={filtrados} selected={selected} columns={COLS} filtroLabel={fEstado} />
-            <button onClick={onNew} className="btn-primary flex items-center gap-2">
-              <PlusIcon className="w-4 h-4" />Nuevo Requerimiento
-            </button>
-          </div>
+          <button onClick={onNew} className="btn-primary flex items-center gap-2">
+            <PlusIcon className="w-4 h-4" />Nuevo Requerimiento
+          </button>
         }
       />
 
@@ -331,7 +314,6 @@ function ReqList({ reqs, sedes, onNew, onView, onEdit, onConsolidar, isAdmin, is
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="table-th w-8"><Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll} /></th>
               <th className="table-th">N° RQ</th>
               <th className="table-th">Fecha</th>
               <th className="table-th">Responsable</th>
@@ -346,14 +328,13 @@ function ReqList({ reqs, sedes, onNew, onView, onEdit, onConsolidar, isAdmin, is
           </thead>
           <tbody className="divide-y divide-gray-50">
             {filtrados.length === 0 && (
-              <tr><td colSpan={11} className="text-center py-10 text-gray-400">No hay requerimientos</td></tr>
+              <tr><td colSpan={10} className="text-center py-10 text-gray-400">No hay requerimientos</td></tr>
             )}
             {filtrados.map(r => {
               const EIcon = ESTADO_ICON[r.estado] || ClockIcon
               return (
-                <tr key={r.id} className="hover:bg-gray-50/60 cursor-pointer">
-                  <td className="table-td w-8" onClick={e => e.stopPropagation()}><Checkbox checked={isSelected(r.id)} onChange={() => toggleOne(r.id)} /></td>
-                  <td className="table-td font-mono font-bold text-[#1e3a5f]" onClick={() => onView(r)}>{r.numero}</td>
+                <tr key={r.id} className="hover:bg-gray-50/60 cursor-pointer" onClick={() => onView(r)}>
+                  <td className="table-td font-mono font-bold text-[#1e3a5f]">{r.numero}</td>
                   <td className="table-td whitespace-nowrap">{fmtDate(r.fecha)}</td>
                   <td className="table-td">{r.responsable}</td>
                   <td className="table-td text-gray-500">{r.areaSolicitante || '—'}</td>
@@ -495,16 +476,18 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">RESP. DE LA SOLICITUD</label>
-                <input className="input bg-gray-50 cursor-default"
+                <input className={`input ${user?.rol !== 'Administrador' ? 'bg-gray-50 cursor-default' : ''}`}
                   value={form.responsable}
-                  readOnly
+                  onChange={e => user?.rol === 'Administrador' && setF('responsable', e.target.value)}
+                  readOnly={user?.rol !== 'Administrador'}
                   placeholder="Nombre del responsable" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">ÁREA SOLICITANTE</label>
-                <input className="input bg-gray-50 cursor-default"
+                <input className={`input ${user?.rol !== 'Administrador' ? 'bg-gray-50 cursor-default' : ''}`}
                   value={form.areaSolicitante}
-                  readOnly
+                  onChange={e => user?.rol === 'Administrador' && setF('areaSolicitante', e.target.value)}
+                  readOnly={user?.rol !== 'Administrador'}
                   placeholder="Área o departamento" />
               </div>
               <div>
@@ -835,7 +818,6 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
               <CheckCircleIcon className="w-3.5 h-3.5" />Paso 4: Resolución Gerencial
             </button>
           )}
-
           <button onClick={handlePDF} className="btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-2.5">
             <DocumentArrowDownIcon className="w-3.5 h-3.5" />PDF
           </button>
@@ -1385,22 +1367,11 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
                                 )}
                               </div>
                               {isPartial && a?.estadoItem !== 'Rechazado' && (
-                                <div className="flex items-center gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                                  <span className="text-xs text-amber-800 font-medium mr-2">¿Qué hacer con este ítem?</span>
-                                  <label className="flex items-center gap-1 cursor-pointer mr-3">
-                                    <input type="radio" name={'stock_dec_' + it.id} value="stock"
-                                      checked={a?.stockDecision !== 'oc'}
-                                      onChange={() => setItemAprob(it.id, 'stockDecision', 'stock')}
-                                      className="accent-green-600" />
-                                    <span className="text-xs text-green-700 font-semibold">Atender con stock ({stk} {it.unidad}) + OC por resto ({cantNec - stk})</span>
-                                  </label>
-                                  <label className="flex items-center gap-1 cursor-pointer">
-                                    <input type="radio" name={'stock_dec_' + it.id} value="oc"
-                                      checked={a?.stockDecision === 'oc'}
-                                      onChange={() => setItemAprob(it.id, 'stockDecision', 'oc')}
-                                      className="accent-orange-600" />
-                                    <span className="text-xs text-orange-700 font-semibold">Enviar todo a OC ({cantNec} {it.unidad})</span>
-                                  </label>
+                                <div className="flex items-center gap-2 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                                  <span className="text-xs text-amber-800 font-medium">Acción automática:</span>
+                                  <span className="text-xs text-green-700 font-semibold">
+                                    ✓ Atender con stock ({stk} {it.unidad}) + OC por resto ({cantNec - stk} {it.unidad})
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -1605,42 +1576,28 @@ export default function Requerimientos() {
     setDetailId(null)
   }
 
+  if (view === 'form') {
+    return (
+      <ReqForm
+        initial={editing}
+        sedes={state.sedes || []}
+        productos={state.productos || []}
+        inventario={state.inventario || {}}
+        user={user}
+        onSave={handleSave}
+        onBack={handleBack}
+      />
+    )
+  }
 
-
-  return (
-    <>
-      {view === 'list' && (
-        <ReqList
-          reqs={reqs}
-          sedes={state.sedes || []}
-          inventario={state.inventario || {}}
-          onNew={handleNew}
-          onView={handleView}
-          onEdit={handleEdit}
-          onConsolidar={handleConsolidar}
-          isAdmin={isAdmin}
-          isCoordGen={isCoordGen}
-          isCoordLogistica={isCoordLogistica}
-          isJefeRRHH={isJefeRRHH}
-        />
-      )}
-      {view === 'form' && (
-        <ReqForm
-          initial={editing}
-          sedes={state.sedes || []}
-          productos={state.productos || []}
-          inventario={state.inventario || {}}
-          user={user}
-          onSave={handleSave}
-          onBack={handleBack}
-        />
-      )}
-      {view === 'detail' && detailReq && (
+  if (view === 'detail' && detailReq) {
+     return (
+      <>
         <ReqDetail
           req={detailReq}
+          sedes={state.sedes || []}
           onBack={handleBack}
           onEdit={handleEdit}
-          onAprobarPaso1={handleAprobarPaso1}
           onAprobarJefe={handleAprobarJefe}
           onAprobar={handleAprobar}
           onConsolidar={handleConsolidar}
@@ -1649,22 +1606,48 @@ export default function Requerimientos() {
           onRechazarGerencia={handleRechazarGerencia}
           onPosponerGerencia={handlePosponerGerencia}
           onAnular={() => handleAnular(detailReq)}
-          sedes={state.sedes || []}
-          inventario={state.inventario || {}}
-          user={user}
-          usuarios={state.usuarios || []}
           logo={state.logo || state.config?.logoBase64 || null}
           isAdmin={isAdmin}
-          isGerencia={isGerencia}
           isCoordGen={isCoordGen}
           isCoordLogistica={isCoordLogistica}
           isJefeRRHH={isJefeRRHH}
+          inventario={state.inventario || {}}
+          user={user}
+          onAprobarPaso1={handleAprobarPaso1}
+          usuarios={state.usuarios || []}
         />
-      )}
+        {confirmBox && (
+          <Confirm
+            message={confirmBox.message}
+            confirmLabel={confirmBox.confirmLabel}
+            onConfirm={confirmBox.onConfirm}
+            onCancel={() => setConfirmBox(null)}
+          />
+        )}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <ReqList
+        reqs={reqs}
+        sedes={state.sedes || []}
+        onNew={handleNew}
+        onView={handleView}
+        onEdit={handleEdit}
+        onConsolidar={handleConsolidar}
+        isAdmin={isAdmin}
+        isCoordGen={isCoordGen}
+        isCoordLogistica={isCoordLogistica}
+        isGerencia={isGerencia}
+        isJefeRRHH={isJefeRRHH}
+        inventario={state.inventario || {}}
+      />
       {confirmBox && (
-        <Confirm
+        <ConfirmDialog
           message={confirmBox.message}
-          confirmLabel={confirmBox.confirmLabel}
+          confirmLabel={confirmBox.confirmLabel || 'Confirmar'}
           onConfirm={confirmBox.onConfirm}
           onCancel={() => setConfirmBox(null)}
         />
