@@ -71,6 +71,7 @@ const TIPO_DOCS = ['DNI','CE','Pasaporte']
 const AFP_SNP = ['AFP Prima','AFP Integra','AFP Habitat','AFP Profuturo','ONPE']
 const GRADO_INS = ['Primaria completa','Secundaria incompleta','Secundaria completa','Técnica incompleta','Técnica completa','Superior universitaria incompleta','Superior universitaria completa','Postgrado']
 const CATEGORIAS_TRABAJADOR = ['Operativo','Administrativo','Supervisor','Técnico','Otro']
+const TURNOS = ['Mañana','Tarde','Amanecida','Retén']
 
 const LEGAJO_CATS = [
   { key:'dni',            label:'Documentos de identidad (DNI/CE)' },
@@ -110,6 +111,7 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
     gradoInstruccion: 'Secundaria completa', carreraProfesional: '',
     ruc: '', claveSol: '', servicioCargo: '', partida: '',
     categoria: 'Operativo',
+    turno: '',
     remuneracionPlanilla: 0, remuneracionLocacion: 0, remuneracionSOS: 0, valorJornal: 0,
     tallaPolo: '', tallaBuzo: '', tallaBotas: '', tallaGuantes: '',
     ...init
@@ -184,6 +186,12 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
         <Campo label="Categoría">
           <select className="input" value={form.categoria} onChange={e=>set('categoria',e.target.value)}>
             {CATEGORIAS_TRABAJADOR.map(c=><option key={c}>{c}</option>)}
+          </select>
+        </Campo>
+        <Campo label="Turno">
+          <select className="input" value={form.turno} onChange={e=>set('turno',e.target.value)}>
+            <option value="">— Sin asignar —</option>
+            {TURNOS.map(t=><option key={t}>{t}</option>)}
           </select>
         </Campo>
       </div>
