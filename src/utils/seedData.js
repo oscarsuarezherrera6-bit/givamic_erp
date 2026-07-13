@@ -698,10 +698,10 @@ export function buildSeedData() {
 
   // ── Empresas del Grupo (RRHH) ────────────────────────────────────────────
   const empresasGrupo = [
-    { id:'eg1', nombre:'GIVAMIC SERVICES S.A.C.',   ruc:'20601234567', direccion:'Av. Principal 123, Lima',      activo:true },
-    { id:'eg2', nombre:'GIVAMIC CLEANING E.I.R.L.', ruc:'20609876543', direccion:'Jr. Los Pinos 456, Lima',       activo:true },
-    { id:'eg3', nombre:'GIVAMIC SOLUTIONS S.R.L.',  ruc:'20612345678', direccion:'Calle Las Flores 789, Lima',    activo:true },
-    { id:'eg4', nombre:'GIVAMIC INDUSTRIAL S.A.C.', ruc:'20618765432', direccion:'Av. Industrial 321, Callao',    activo:true },
+    { id:'eg1', nombre:'GIVAMIC SERVICES S.A.C.',   ruc:'20601234567', direccion:'Av. Principal 123, Lima',      activo:true, clienteIds:['cr1','cr3'] },
+    { id:'eg2', nombre:'GIVAMIC CLEANING E.I.R.L.', ruc:'20609876543', direccion:'Jr. Los Pinos 456, Lima',       activo:true, clienteIds:['cr2','cr1'] },
+    { id:'eg3', nombre:'GIVAMIC SOLUTIONS S.R.L.',  ruc:'20612345678', direccion:'Calle Las Flores 789, Lima',    activo:true, clienteIds:['cr3','cr4'] },
+    { id:'eg4', nombre:'GIVAMIC INDUSTRIAL S.A.C.', ruc:'20618765432', direccion:'Av. Industrial 321, Callao',    activo:true, clienteIds:['cr4'] },
   ]
 
   // ── Clientes RRHH (con locales) ──────────────────────────────────────────

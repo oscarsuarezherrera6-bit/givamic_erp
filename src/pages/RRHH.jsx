@@ -164,16 +164,30 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
       <div className="bg-[#1e3a5f] text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg">Asignación</div>
       <div className="grid grid-cols-2 gap-3">
         <Campo label="Empresa del Grupo">
-          <select className="input" value={form.empresaGrupoId} onChange={e=>set('empresaGrupoId',e.target.value)}>
+          <select className="input" value={form.empresaGrupoId} onChange={e => {
+            const egId = e.target.value
+            const eg = empresasGrupo.find(x => x.id === egId)
+            const ids = eg?.clienteIds || []
+            // Auto-seleccionar cliente si la empresa tiene solo uno vinculado
+            const autoCliente = ids.length === 1 ? ids[0] : ''
+            setForm(p => ({ ...p, empresaGrupoId: egId, clienteRRHHId: autoCliente, localRRHHId: '' }))
+          }}>
             <option value="">— Sin asignar —</option>
             {empresasGrupo.map(e=><option key={e.id} value={e.id}>{e.nombre}</option>)}
           </select>
         </Campo>
         <Campo label="Cliente">
-          <select className="input" value={form.clienteRRHHId} onChange={e=>{ set('clienteRRHHId',e.target.value); set('localRRHHId','') }}>
-            <option value="">— Sin asignar —</option>
-            {clientesRRHH.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}
-          </select>
+          {(() => {
+            const eg = empresasGrupo.find(x => x.id === form.empresaGrupoId)
+            const ids = eg?.clienteIds || []
+            const opts = ids.length > 0 ? clientesRRHH.filter(c => ids.includes(c.id)) : clientesRRHH
+            return (
+              <select className="input" value={form.clienteRRHHId} onChange={e=>{ set('clienteRRHHId',e.target.value); set('localRRHHId','') }}>
+                <option value="">— Sin asignar —</option>
+                {opts.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}
+              </select>
+            )
+          })()}
         </Campo>
         <Campo label="Local / Sede">
           <select className="input" value={form.localRRHHId} onChange={e=>set('localRRHHId',e.target.value)} disabled={!form.clienteRRHHId}>
