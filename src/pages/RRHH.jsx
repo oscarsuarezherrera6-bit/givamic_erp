@@ -13,6 +13,12 @@ import jsPDF from 'jspdf'
 // ── Utilidades ─────────────────────────────────────────────────────────────────
 const genId = () => Math.random().toString(36).slice(2,10)
 const todayStr = () => new Date().toISOString().slice(0,10)
+// Nombre completo apellidos compatible con registros viejos (apellidos) y nuevos (apellidoPaterno/Materno)
+const fullApellidos = (t) => {
+  if (t?.apellidoPaterno || t?.apellidoMaterno)
+    return [t.apellidoPaterno, t.apellidoMaterno].filter(Boolean).join(' ')
+  return t?.apellidos || ''
+}
 
 function calcEdad(fecha) {
   if (!fecha) return null
@@ -98,9 +104,16 @@ function Campo({ label, children, half }) {
 // ── Formulario de trabajador (crear / editar) ──────────────────────────────────
 function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH }) {
   const init = initial || {}
+  // Compatibilidad: si el registro tiene apellidos (campo viejo), partir en paterno/materno
+  const initCompat = init ? {
+    ...init,
+    apellidoPaterno: init.apellidoPaterno || (init.apellidos ? init.apellidos.split(' ')[0] : ''),
+    apellidoMaterno: init.apellidoMaterno || (init.apellidos ? init.apellidos.split(' ').slice(1).join(' ') : ''),
+  } : {}
+
   const [form, setForm] = useState({
-    apellidos: '', nombres: '', tipoDocumento: 'DNI', documento: '',
-    fechaRegistro: todayStr(), fechaIngreso: todayStr(),
+    apellidoPaterno: '', apellidoMaterno: '', nombres: '', tipoDocumento: 'DNI', documento: '',
+    fechaRegistro: todayStr(), fechaIngreso: '',
     tipoMovimiento: 'Alta', tipoVinculo: 'Planilla', empresaProveedora: '',
     empresaGrupoId: '', clienteRRHHId: '', localRRHHId: '',
     area: '', celular: '', correo: '',
@@ -114,7 +127,7 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
     turno: '',
     remuneracionPlanilla: 0, remuneracionLocacion: 0, remuneracionSOS: 0, valorJornal: 0,
     tallaPolo: '', tallaBuzo: '', tallaBotas: '', tallaGuantes: '',
-    ...init
+    ...initCompat
   })
   const [hijosTmp, setHijosTmp] = useState(init.hijos || [])
   const set = (k,v) => setForm(p => ({...p,[k]:v}))
@@ -134,7 +147,7 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!form.apellidos.trim() || !form.documento.trim()) return
+    if (!form.apellidoPaterno.trim() || !form.documento.trim()) return
     onSave({ ...form, hijos: hijosTmp })
     onClose()
   }
@@ -144,7 +157,8 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
       {/* Sección 1: Identificación */}
       <div className="bg-[#1e3a5f] text-white text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-lg">Identificación</div>
       <div className="grid grid-cols-2 gap-3">
-        <Campo label="Apellidos *"><input className="input col-span-2" value={form.apellidos} onChange={e=>set('apellidos',e.target.value)} required /></Campo>
+        <Campo label="Apellido Paterno *"><input className="input" value={form.apellidoPaterno} onChange={e=>set('apellidoPaterno',e.target.value)} required /></Campo>
+        <Campo label="Apellido Materno"><input className="input" value={form.apellidoMaterno} onChange={e=>set('apellidoMaterno',e.target.value)} /></Campo>
         <Campo label="Nombres *"><input className="input" value={form.nombres} onChange={e=>set('nombres',e.target.value)} required /></Campo>
         <Campo label="Tipo documento">
           <select className="input" value={form.tipoDocumento} onChange={e=>set('tipoDocumento',e.target.value)}>
@@ -152,7 +166,11 @@ function FormTrabajador({ initial, onSave, onClose, empresasGrupo, clientesRRHH 
           </select>
         </Campo>
         <Campo label="Número documento *"><input className="input" value={form.documento} onChange={e=>set('documento',e.target.value)} required /></Campo>
-        <Campo label="Fecha registro"><input type="date" className="input" value={form.fechaRegistro} onChange={e=>set('fechaRegistro',e.target.value)} /></Campo>
+        <Campo label="Fecha de registro"><input type="date" className="input" value={form.fechaRegistro} onChange={e=>set('fechaRegistro',e.target.value)} /></Campo>
+        <Campo label="Fecha de ingreso *">
+          <input type="date" className="input" value={form.fechaIngreso} onChange={e=>set('fechaIngreso',e.target.value)}
+            title="Fecha en que el trabajador empieza a trabajar (puede ser distinta al registro)" />
+        </Campo>
         <Campo label="Tipo movimiento">
           <select className="input" value={form.tipoMovimiento} onChange={e=>set('tipoMovimiento',e.target.value)}>
             {['Alta','Reingreso','Baja'].map(t=><option key={t}>{t}</option>)}
@@ -333,7 +351,7 @@ function TabDatosGenerales({ t, isRemu, onEdit, onBaja, onReactivar, isAdmin }) 
         <table className="w-full text-sm">
           <tbody>
             <Fila izq="Fecha de Registro"  derIzq={fmtFecha(t.fechaRegistro)} der="Tipo de Movimiento" derDer={t.tipoMovimiento||'—'} />
-            <Fila izq="Apellidos y Nombres" derIzq={`${t.apellidos||''}, ${t.nombres||''}`} der="Tipo de Vínculo" derDer={t.tipoVinculo||'—'} />
+            <Fila izq="Apellidos y Nombres" derIzq={`${fullApellidos(t)}, ${t.nombres||''}`} der="Tipo de Vínculo" derDer={t.tipoVinculo||'—'} />
             <Fila izq="Tipo de Documento"  derIzq={t.tipoDocumento||'—'} der="Documento" derDer={t.documento||'—'} />
             <Fila izq="Empresa Principal"  derIzq={t._empresa?.nombre||'—'} der="Empresa Proveedora" derDer={t.empresaProveedora||'—'} />
             <Fila izq="Sede / Proyecto"    derIzq={t._local?.nombre||'—'} der="Área" derDer={t.area||'—'} />
@@ -693,7 +711,7 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
     doc.text('FICHA DEL TRABAJADOR — GIVAMIC RRHH', 14, 20)
     doc.setFontSize(9); doc.setFont('helvetica','normal')
     const lines = [
-      `Trabajador: ${t.apellidos}, ${t.nombres}`, `DNI: ${t.documento}`, `Estado: ${t.estado}`,
+      `Trabajador: ${fullApellidos(t)}, ${t.nombres}`, `DNI: ${t.documento}`, `Estado: ${t.estado}`,
       '', `Empresa: ${empresa?.nombre||'—'}`, `Cliente: ${cliente?.nombre||'—'}`, `Local: ${local?.nombre||'—'}`,
       `Cargo: ${t.servicioCargo||'—'}`, `Área: ${t.area||'—'}`, `Vínculo: ${t.tipoVinculo||'—'}`,
       '', 'CONTROL DOCUMENTARIO',
@@ -703,7 +721,7 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
       `Contrato: ${t.documentos?.contrato?.tipo||''} ${t.documentos?.contrato?.estado||'—'}`,
     ]
     let y=32; lines.forEach(l=>{ if(y>270){doc.addPage();y=20}; doc.text(l,14,y); y+=5.5 })
-    doc.save(`ficha-${t.apellidos}-${t.documento}.pdf`)
+    doc.save(`ficha-${fullApellidos(t).replace(' ','-')}-${t.documento}.pdf`)
   }
 
   const SUBTABS = [
@@ -721,7 +739,7 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
           <ArrowLeftIcon className="w-4 h-4"/> Volver
         </button>
         <div className="flex-1">
-          <h2 className="text-xl font-bold text-gray-800">{t.apellidos}, {t.nombres}</h2>
+          <h2 className="text-xl font-bold text-gray-800">{fullApellidos(t)}, {t.nombres}</h2>
           <p className="text-sm text-gray-500">{t.documento} · {t.servicioCargo||'—'} · {cliente?.nombre||'—'} / {local?.nombre||'—'}</p>
         </div>
         <button onClick={exportPDF} className="btn-secondary text-sm flex items-center gap-1"><DocumentArrowDownIcon className="w-4 h-4"/> PDF</button>
@@ -756,7 +774,7 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
       {confirmBaja && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
-            <h3 className="font-semibold text-gray-800">Dar de Baja — {t.apellidos}</h3>
+            <h3 className="font-semibold text-gray-800">Dar de Baja — {fullApellidos(t)}</h3>
             <div><label className="text-xs font-medium text-gray-600 block mb-1">Motivo de baja *</label>
               <textarea className="input" rows={3} value={motivoBaja} onChange={e=>setMotivoBaja(e.target.value)} required /></div>
             <div className="flex gap-3 justify-end">
@@ -769,7 +787,7 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
       )}
 
       {confirmReact && (
-        <Confirm message={`¿Reactivar a ${t.apellidos}, ${t.nombres}?`} confirmLabel="Reactivar"
+        <Confirm message={`¿Reactivar a ${fullApellidos(t)}, ${t.nombres}?`} confirmLabel="Reactivar"
           onConfirm={()=>{ dispatch({type:'REACTIVAR_TRABAJADOR',id:t.id,fecha:todayStr(),registradoPor:user?.nombre||''}); toast('Trabajador reactivado'); setConfirmReact(false) }}
           onCancel={()=>setConfirmReact(false)} />
       )}
@@ -795,14 +813,14 @@ function TabListadoTrabajadores({ onSelectTrabajador, isAdmin, isSoma, isRRHH, d
   const listaFiltrada = useMemo(() => {
     const q = busq.toLowerCase()
     return trabajadores.filter(t => {
-      const fullName = `${t.apellidos||''} ${t.nombres||''}`.toLowerCase()
+      const fullName = `${fullApellidos(t)} ${t.nombres||''}`.toLowerCase()
       const coincideBusq = !q || fullName.includes(q) || (t.documento||'').includes(q)
       const empresa = empresasGrupo.find(e=>e.id===t.empresaGrupoId)
       const coincideEmp = !filtEmpresa || t.empresaGrupoId === filtEmpresa
       const coincideCli = !filtCliente || t.clienteRRHHId === filtCliente
       const coincideEst = !filtEstado  || t.estado === filtEstado
       return coincideBusq && coincideEmp && coincideCli && coincideEst
-    }).sort((a,b) => `${a.apellidos} ${a.nombres}`.localeCompare(`${b.apellidos} ${b.nombres}`))
+    }).sort((a,b) => `${fullApellidos(a)} ${a.nombres}`.localeCompare(`${fullApellidos(b)} ${b.nombres}`))
   }, [trabajadores, busq, filtEmpresa, filtCliente, filtEstado, empresasGrupo])
 
   const totalPags = Math.max(1, Math.ceil(listaFiltrada.length / POR_PAG))
@@ -887,7 +905,7 @@ function TabListadoTrabajadores({ onSelectTrabajador, isAdmin, isSoma, isRRHH, d
                 <tr key={t.id} onClick={()=>onSelectTrabajador(t.id)}
                   className="hover:bg-blue-50/50 cursor-pointer transition-colors">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-gray-800">{t.apellidos}, {t.nombres}</p>
+                    <p className="font-medium text-gray-800">{fullApellidos(t)}, {t.nombres}</p>
                     <p className="text-xs text-gray-400">{t.servicioCargo||'—'}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-700 font-mono text-xs">{t.documento||'—'}</td>
@@ -942,7 +960,7 @@ function ConsultaDNI({ isRemu }) {
   const buscar = () => {
     const q = query.trim()
     if (!q) return
-    const t = trabajadores.find(t => t.documento === q || `${t.apellidos} ${t.nombres}`.toLowerCase().includes(q.toLowerCase()))
+    const t = trabajadores.find(t => t.documento === q || `${fullApellidos(t)} ${t.nombres}`.toLowerCase().includes(q.toLowerCase()))
     if (t) { setResult(t); setNotFound(false) }
     else { setResult(null); setNotFound(true) }
   }
@@ -974,7 +992,7 @@ function ConsultaDNI({ isRemu }) {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Estado Actual</p>
             <div className="flex items-center gap-3">
               <span className={`px-3 py-1 rounded-full text-sm font-bold ${t.estado==='Activo'?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>{t.estado||'—'}</span>
-              <span className="text-gray-700 font-semibold">{t.apellidos}, {t.nombres}</span>
+              <span className="text-gray-700 font-semibold">{fullApellidos(t)}, {t.nombres}</span>
               {t.correlativo && <span className="text-xs text-gray-400">#{t.correlativo}</span>}
             </div>
             <p className="text-sm text-gray-500 mt-1">{t.servicioCargo||'—'} · {emp?.nombre||'—'} → {cli?.nombre||'—'} / {loc?.nombre||'—'}</p>
@@ -1087,7 +1105,7 @@ function TabDashboard({ isRRHH, isAdmin, isSoma, isRemu }) {
           const cli = clientesRRHH.find(c=>c.id===t.clienteRRHHId)
           lista.push({
             id: `${t.id}-${key}`,
-            trabajador: `${t.apellidos}, ${t.nombres}`,
+            trabajador: `${fullApellidos(t)}, ${t.nombres}`,
             empresa: emp?.nombre||'—',
             cliente: cli?.nombre||'—',
             documento: label,
@@ -1213,7 +1231,7 @@ function TabRotaciones({ isAdmin, isSoma, isRRHH, dispatch, toast }) {
   const activos = trabajadores.filter(t=>t.estado==='Activo')
   const filtrados = activos.filter(t=>{
     const q = busq.toLowerCase()
-    return !q || `${t.apellidos} ${t.nombres}`.toLowerCase().includes(q) || (t.documento||'').includes(q)
+    return !q || `${fullApellidos(t)} ${t.nombres}`.toLowerCase().includes(q) || (t.documento||'').includes(q)
   })
 
   const clienteSeleccionado = clientesRRHH.find(c=>c.id===nuevaAsig.clienteRRHHId)
@@ -1269,7 +1287,7 @@ function TabRotaciones({ isAdmin, isSoma, isRRHH, dispatch, toast }) {
               const loc = (cli?.locales||[]).find(l=>l.id===t.localRRHHId)
               return (
                 <tr key={t.id} className="hover:bg-blue-50/30 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-800">{t.apellidos}, {t.nombres}</td>
+                  <td className="px-4 py-3 font-medium text-gray-800">{fullApellidos(t)}, {t.nombres}</td>
                   <td className="px-4 py-3 text-gray-600">{emp?.nombre||'—'}</td>
                   <td className="px-4 py-3 text-gray-600">{cli?.nombre||'—'}{loc&&<span className="text-gray-400"> / {loc.nombre}</span>}</td>
                   <td className="px-4 py-3 text-gray-600">{t.servicioCargo||'—'}</td>
@@ -1287,7 +1305,7 @@ function TabRotaciones({ isAdmin, isSoma, isRRHH, dispatch, toast }) {
       </div>
 
       {showForm && tSelected && (
-        <Modal title={`Rotación — ${tSelected.apellidos}, ${tSelected.nombres}`} onClose={()=>setShowForm(false)} wide>
+        <Modal title={`Rotación — ${fullApellidos(tSelected)}, ${tSelected.nombres}`} onClose={()=>setShowForm(false)} wide>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div><label className="text-xs font-medium text-gray-600 block mb-1">Empresa destino *</label>

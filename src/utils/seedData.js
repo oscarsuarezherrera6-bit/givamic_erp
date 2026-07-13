@@ -773,7 +773,7 @@ const mkFile = (nombre, cat) => ({ id: 'df-'+Math.random().toString(36).slice(2,
 
 const trabajadores = [
   // 1 - SCTR VENCIDO, EMO Aprobado
-  { id:'tr1', correlativo:1, apellidos:'Quispe Flores', nombres:'María Elena', tipoDocumento:'DNI', documento:'45231789',
+  { id:'tr1', correlativo:1, apellidoPaterno:'Quispe', apellidoMaterno:'Flores', apellidos:'Quispe Flores', nombres:'María Elena', tipoDocumento:'DNI', documento:'45231789',
     fechaRegistro:'2023-03-01', fechaIngreso:'2023-03-01', estado:'Activo', empresaGrupoId:'eg1', clienteRRHHId:'cr1', localRRHHId:'lo1a',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'987654321', correo:'mquispe@givamic.pe',
     numeroCuenta:'1928374650', banco:'BCP', cci:'00219100019283746500', fechaNacimiento:'1990-08-14', estadoCivil:'Casada', hijos:[
@@ -795,7 +795,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2023-03-01T08:00:00' },
 
   // 2 - SCTR VENCIDO, EMO Pendiente
-  { id:'tr2', correlativo:2, apellidos:'Mamani Huanca', nombres:'Carlos Alberto', tipoDocumento:'DNI', documento:'73821456',
+  { id:'tr2', correlativo:2, apellidoPaterno:'Mamani', apellidoMaterno:'Huanca', apellidos:'Mamani Huanca', nombres:'Carlos Alberto', tipoDocumento:'DNI', documento:'73821456',
     fechaRegistro:'2023-07-15', fechaIngreso:'2023-07-15', estado:'Activo', empresaGrupoId:'eg2', clienteRRHHId:'cr2', localRRHHId:'lo2a',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'912345678', correo:'',
     numeroCuenta:'4561237890', banco:'BBVA', cci:'', fechaNacimiento:'1987-11-30', estadoCivil:'Soltero', hijos:[],
@@ -814,7 +814,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2023-07-15T08:00:00' },
 
   // 3 - SCTR POR VENCER (2026-07-25), CON HIJOS
-  { id:'tr3', correlativo:3, apellidos:'Torres Castro', nombres:'Ana Lucía', tipoDocumento:'DNI', documento:'62841975',
+  { id:'tr3', correlativo:3, apellidoPaterno:'Torres', apellidoMaterno:'Castro', apellidos:'Torres Castro', nombres:'Ana Lucía', tipoDocumento:'DNI', documento:'62841975',
     fechaRegistro:'2024-02-01', fechaIngreso:'2024-02-01', estado:'Activo', empresaGrupoId:'eg1', clienteRRHHId:'cr3', localRRHHId:'lo3a',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'956789012', correo:'atorres@givamic.pe',
     numeroCuenta:'7891234560', banco:'Interbank', cci:'', fechaNacimiento:'1993-03-22', estadoCivil:'Casada', hijos:[
@@ -837,7 +837,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2024-02-01T08:00:00' },
 
   // 4 - SCTR POR VENCER (2026-08-01)
-  { id:'tr4', correlativo:4, apellidos:'Ramos Silva', nombres:'Pedro Augusto', tipoDocumento:'DNI', documento:'48237691',
+  { id:'tr4', correlativo:4, apellidoPaterno:'Ramos', apellidoMaterno:'Silva', apellidos:'Ramos Silva', nombres:'Pedro Augusto', tipoDocumento:'DNI', documento:'48237691',
     fechaRegistro:'2023-11-10', fechaIngreso:'2023-11-10', estado:'Activo', empresaGrupoId:'eg3', clienteRRHHId:'cr4', localRRHHId:'lo4a',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'934567891', correo:'',
     numeroCuenta:'3214567890', banco:'Scotiabank', cci:'', fechaNacimiento:'1985-07-08', estadoCivil:'Casado', hijos:[
@@ -858,7 +858,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2023-11-10T08:00:00' },
 
   // 5 - LEGAJO COMPLETO 9/9
-  { id:'tr5', correlativo:5, apellidos:'Flores García', nombres:'Rosa María', tipoDocumento:'DNI', documento:'52184736',
+  { id:'tr5', correlativo:5, apellidoPaterno:'Flores', apellidoMaterno:'García', apellidos:'Flores García', nombres:'Rosa María', tipoDocumento:'DNI', documento:'52184736',
     fechaRegistro:'2022-06-01', fechaIngreso:'2022-06-01', estado:'Activo', empresaGrupoId:'eg1', clienteRRHHId:'cr1', localRRHHId:'lo1b',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'978901234', correo:'rflores@givamic.pe',
     numeroCuenta:'6547891230', banco:'Banco de la Nación', cci:'00818100065478912300', fechaNacimiento:'1988-12-05', estadoCivil:'Soltera', hijos:[],
@@ -880,7 +880,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2022-06-01T08:00:00' },
 
   // 6 - EMO POR VENCER (2026-07-20)
-  { id:'tr6', correlativo:6, apellidos:'Huanca López', nombres:'Jorge Luis', tipoDocumento:'DNI', documento:'38901254',
+  { id:'tr6', correlativo:6, apellidoPaterno:'Huanca', apellidoMaterno:'López', apellidos:'Huanca López', nombres:'Jorge Luis', tipoDocumento:'DNI', documento:'38901254',
     fechaRegistro:'2023-05-20', fechaIngreso:'2023-05-20', estado:'Activo', empresaGrupoId:'eg2', clienteRRHHId:'cr2', localRRHHId:'lo2b',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'945678901', correo:'',
     numeroCuenta:'', banco:'BCP', cci:'', fechaNacimiento:'1995-02-14', estadoCivil:'Soltero', hijos:[],
@@ -899,7 +899,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2023-05-20T08:00:00' },
 
   // 7 - Activo, con hijos
-  { id:'tr7', correlativo:7, apellidos:'Vargas Ríos', nombres:'Elena Patricia', tipoDocumento:'DNI', documento:'54781236',
+  { id:'tr7', correlativo:7, apellidoPaterno:'Vargas', apellidoMaterno:'Ríos', apellidos:'Vargas Ríos', nombres:'Elena Patricia', tipoDocumento:'DNI', documento:'54781236',
     fechaRegistro:'2024-08-01', fechaIngreso:'2024-08-01', estado:'Activo', empresaGrupoId:'eg4', clienteRRHHId:'cr4', localRRHHId:'lo4b',
     tipoMovimiento:'Alta', tipoVinculo:'Locación', empresaProveedora:'Serv. Generales SAC', area:'Limpieza', celular:'967890123', correo:'evargas@gmail.com',
     numeroCuenta:'9012345678', banco:'Interbank', cci:'', fechaNacimiento:'1992-06-18', estadoCivil:'Conviviente', hijos:[
@@ -921,7 +921,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2024-08-01T08:00:00' },
 
   // 8 - BAJA
-  { id:'tr8', correlativo:8, apellidos:'Condori Mamani', nombres:'Luis Enrique', tipoDocumento:'DNI', documento:'29847156',
+  { id:'tr8', correlativo:8, apellidoPaterno:'Condori', apellidoMaterno:'Mamani', apellidos:'Condori Mamani', nombres:'Luis Enrique', tipoDocumento:'DNI', documento:'29847156',
     fechaRegistro:'2022-01-10', fechaIngreso:'2022-01-10', estado:'Baja', fechaBaja:'2025-09-30', motivoBaja:'Renuncia voluntaria',
     empresaGrupoId:'eg1', clienteRRHHId:'cr1', localRRHHId:'lo1c',
     tipoMovimiento:'Baja', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'923456789', correo:'',
@@ -944,7 +944,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2022-01-10T08:00:00' },
 
   // 9 - Activo, SCTR vigente
-  { id:'tr9', correlativo:9, apellidos:'Palacios Torres', nombres:'Carmen Rosa', tipoDocumento:'DNI', documento:'67392814',
+  { id:'tr9', correlativo:9, apellidoPaterno:'Palacios', apellidoMaterno:'Torres', apellidos:'Palacios Torres', nombres:'Carmen Rosa', tipoDocumento:'DNI', documento:'67392814',
     fechaRegistro:'2025-01-15', fechaIngreso:'2025-01-15', estado:'Activo', empresaGrupoId:'eg3', clienteRRHHId:'cr3', localRRHHId:'lo3a',
     tipoMovimiento:'Alta', tipoVinculo:'Planilla', empresaProveedora:'', area:'Limpieza', celular:'956781234', correo:'cpalacios@givamic.pe',
     numeroCuenta:'5678901234', banco:'BBVA', cci:'', fechaNacimiento:'1998-09-12', estadoCivil:'Soltera', hijos:[],
@@ -964,7 +964,7 @@ const trabajadores = [
     creadoPor:'Admin', creadoEn:'2025-01-15T08:00:00' },
 
   // 10 - Activo, Locación + SOS
-  { id:'tr10', correlativo:10, apellidos:'Díaz Mendoza', nombres:'Roberto Carlos', tipoDocumento:'DNI', documento:'84216539',
+  { id:'tr10', correlativo:10, apellidoPaterno:'Díaz', apellidoMaterno:'Mendoza', apellidos:'Díaz Mendoza', nombres:'Roberto Carlos', tipoDocumento:'DNI', documento:'84216539',
     fechaRegistro:'2024-04-01', fechaIngreso:'2024-04-01', estado:'Activo', empresaGrupoId:'eg2', clienteRRHHId:'cr1', localRRHHId:'lo1a',
     tipoMovimiento:'Alta', tipoVinculo:'SOS', empresaProveedora:'RH Solutions SRL', area:'Mantenimiento', celular:'901234567', correo:'rdiaz@gmail.com',
     numeroCuenta:'1234567891', banco:'BCP', cci:'00219100012345678910', fechaNacimiento:'1982-01-30', estadoCivil:'Divorciado', hijos:[
