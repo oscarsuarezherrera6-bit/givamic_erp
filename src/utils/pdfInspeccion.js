@@ -229,8 +229,8 @@ export function generarPDFInspeccion(conf, oc, proveedor, logo) {
   banda(doc, x, y, CW, 5.5, 'FIRMAS / CONFORMIDAD')
   y += 5.5
 
-  const FC = [40, 68, 52, CW-40-68-52]  // RESPONSABLE | APELLIDOS Y NOMBRES | CARGO | FIRMA
-  const FL = ['RESPONSABLE','APELLIDOS Y NOMBRES','CARGO','FIRMA']
+  const FC = [40, 68, CW-40-68]  // RESPONSABLE | APELLIDOS Y NOMBRES | CARGO
+  const FL = ['RESPONSABLE','APELLIDOS Y NOMBRES','CARGO']
 
   let fx = x
   FC.forEach((w,i) => {
@@ -244,7 +244,7 @@ export function generarPDFInspeccion(conf, oc, proveedor, logo) {
 
   // Fila datos: RESPONSABLE DE LA INSPECCIÓN
   fx = x
-  const firmVals = ['RESPONSABLE DE\nLA INSPECCIÓN', conf.inspeccionadoPor||'', '', '']
+  const firmVals = ['RESPONSABLE DE\nLA INSPECCIÓN', conf.inspeccionadoPor||'', '']
   FC.forEach((w,i) => {
     borde(doc, fx, y, w, 22)
     doc.setFont('helvetica', i===0?'bold':'normal'); doc.setFontSize(7); doc.setTextColor(...NK)

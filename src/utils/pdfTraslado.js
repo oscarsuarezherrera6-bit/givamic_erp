@@ -163,7 +163,7 @@ export function generarPDFTraslado(traslado, logo) {
   doc.text('APROBACIONES', MG + CW / 2, y + BAND_H2 / 2 + 1.5, { align: 'center' })
   y += BAND_H2
 
-  const AP_W = CW / 2, AP_ROW = 6, FIRMA_H = 18
+  const AP_W = CW / 2, AP_ROW = 6
   const apCols2 = [
     { x: MG,        title: 'SALIDA APROBADA POR:' },
     { x: MG + AP_W, title: 'RECEPCIONADO, VALIDADO Y APROBADO POR:' },
@@ -192,12 +192,6 @@ export function generarPDFTraslado(traslado, logo) {
     doc.text('CARGO:', ap.x + 2, y + AP_ROW / 2 + 1.5)
   })
   y += AP_ROW
-
-  apCols2.forEach(ap => {
-    doc.rect(ap.x, y, AP_W, FIRMA_H)
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5)
-    doc.text('FIRMA:', ap.x + 2, y + 5)
-  })
 
   const origenSlug  = (traslado.sedeOrigenNombre  || 'origen').replace(/\s+/g, '-')
   const destinoSlug = (traslado.sedeDestinoNombre || 'destino').replace(/\s+/g, '-')

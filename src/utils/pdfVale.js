@@ -204,7 +204,6 @@ export function generarPDFVale(vale, sedes, logo) {
 
   const AP_W = CW / 2
   const AP_ROW = 6
-  const FIRMA_H = 18
 
   const apCols2 = [
     { x: MG,        title: 'SALIDA APROBADA POR:' },
@@ -234,12 +233,6 @@ export function generarPDFVale(vale, sedes, logo) {
     doc.text('CARGO:', ap.x + 2, y + AP_ROW / 2 + 1.5)
   })
   y += AP_ROW
-
-  apCols2.forEach(ap => {
-    doc.rect(ap.x, y, AP_W, FIRMA_H)
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5)
-    doc.text('FIRMA:', ap.x + 2, y + 5)
-  })
 
   // ── GUARDAR ───────────────────────────────────────────────────
   const sedeSlug = (sedes.find(s => s.id === vale.sedeDestinoId)?.nombre || 'sede').replace(/\s+/g, '-')

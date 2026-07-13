@@ -415,8 +415,8 @@ export function generarPDFCotizacion(cot, logo) {
   doc.text('APROBACIONES', ML+2, y+3.2)
   y += 5
 
-  const apCols = [45, 65, 60, 30, (W-200)]
-  const apHdrs = ['RESPONSABLE','CARGO','NOMBRE Y APELLIDOS','FECHA','FIRMA']
+  const apCols = [45, 65, 60, 30]
+  const apHdrs = ['RESPONSABLE','CARGO','NOMBRE Y APELLIDOS','FECHA']
   cx2 = ML
   apHdrs.forEach((h, i) => {
     hdr(doc, cx2, y, apCols[i], 5.5, [50,90,140], h, 6)
@@ -431,7 +431,7 @@ export function generarPDFCotizacion(cot, logo) {
   ]
   apRows.forEach(ap => {
     cx2 = ML
-    const vals = [ap.responsable, ap.cargo, ap.nombre, ap.fecha, '']
+    const vals = [ap.responsable, ap.cargo, ap.nombre, ap.fecha]
     vals.forEach((v, i) => {
       cell(doc, cx2, y, apCols[i], 7, v, { fs:6 })
       cx2 += apCols[i]

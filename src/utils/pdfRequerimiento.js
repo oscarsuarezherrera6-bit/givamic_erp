@@ -272,7 +272,7 @@ export function generarPDFRequerimiento(req, logo) {
 
   // ══ FIRMAS ════════════════════════════════════════════════════════════════
   const sigW = (CW - 4) / 2
-  const sigH = 28
+  const sigH = 20
   const sigY = y + 2
 
   const sigBlocks = [
@@ -281,7 +281,6 @@ export function generarPDFRequerimiento(req, logo) {
       rows: [
         { lbl: 'APELLIDOS Y NOMBRES:', val: req.requeridoPorNombre || '' },
         { lbl: 'CARGO:',               val: req.requeridoPorCargo  || '' },
-        { lbl: 'FIRMA:',               val: '' },
       ],
     },
     {
@@ -289,7 +288,6 @@ export function generarPDFRequerimiento(req, logo) {
       rows: [
         { lbl: 'APELLIDOS Y NOMBRES:', val: req.aprobadoPorNombre || req.aprobadoPor || '' },
         { lbl: 'CARGO:',               val: req.aprobadoPorCargo  || '' },
-        { lbl: 'FIRMA:',               val: '' },
       ],
     },
   ]
