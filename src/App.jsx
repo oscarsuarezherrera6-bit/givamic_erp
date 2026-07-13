@@ -7,11 +7,10 @@ import Layout from './components/layout/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import Facturas from './pages/Facturas'
-import Transferencias from './pages/Transferencias'
-import ValesSalida from './pages/ValesSalida'
-import Movimientos from './pages/Movimientos'
 import Maquinas from './pages/Maquinas'
 import Maestros from './pages/Maestros'
+import EmpresasClientes from './pages/EmpresasClientes'
+import FacturacionClientes from './pages/FacturacionClientes'
 import EPPs from './pages/Epps'
 import RQs from './pages/RQs'
 import Cotizaciones from './pages/Cotizaciones'
@@ -56,6 +55,7 @@ function AppRoutes() {
         <Route path="almacen"                element={<PermRoute modulo="almacen"><Almacen /></PermRoute>} />
         <Route path="maquinas"               element={<PermRoute modulo="maquinas"><Maquinas /></PermRoute>} />
         <Route path="maestros"               element={<PermRoute modulo="maestros"><Maestros /></PermRoute>} />
+        <Route path="empresas-clientes"       element={<PermRoute modulo="empresas-clientes"><EmpresasClientes /></PermRoute>} />
         <Route path="epps"                   element={<PermRoute modulo="epps"><EPPs /></PermRoute>} />
         <Route path="rqs"                    element={<PermRoute modulo="requerimientos"><RQs /></PermRoute>} />
         <Route path="requerimientos"         element={<PermRoute modulo="requerimientos"><Requerimientos /></PermRoute>} />
@@ -66,6 +66,7 @@ function AppRoutes() {
         <Route path="evaluacion-proveedores" element={<PermRoute modulo="evaluacion-proveedores"><EvaluacionProveedores /></PermRoute>} />
         <Route path="rrhh"                    element={<PermRoute modulo="rrhh"><RRHH /></PermRoute>} />
         <Route path="cuentas-por-pagar"      element={<PermRoute modulo="cuentas-por-pagar"><CuentasPorPagar /></PermRoute>} />
+        <Route path="facturacion-clientes"    element={<PermRoute modulo="facturacion-clientes"><FacturacionClientes /></PermRoute>} />
         <Route path="reportes"               element={<PermRoute modulo="reportes"><Reportes /></PermRoute>} />
         <Route path="roles-permisos"         element={<PermRoute modulo="roles-permisos"><RolesPermisos /></PermRoute>} />
       </Route>

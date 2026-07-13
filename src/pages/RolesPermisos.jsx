@@ -24,6 +24,8 @@ const MODULOS_DEF = [
   { id: 'cuentas-por-pagar',      label: 'Cuentas por Pagar',           acciones: ['ver','crear'] },
   { id: 'reportes',               label: 'Reportes',                    acciones: ['ver'] },
   { id: 'auditoria',              label: 'Auditoría',                   acciones: ['ver'] },
+  { id: 'rrhh',                    label: 'Recursos Humanos',            acciones: ['ver','crear','editar'] },
+  { id: 'empresas-clientes',       label: 'Empresas y Clientes',         acciones: ['ver','editar'] },
   { id: 'maestros',               label: 'Maestros',                    acciones: ['ver','editar'] },
   { id: 'roles-permisos',         label: 'Roles y Permisos',            acciones: ['ver','editar'] },
 ]

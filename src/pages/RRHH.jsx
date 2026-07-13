@@ -754,6 +754,8 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
   const [confirmBaja, setConfirmBaja] = useState(false)
   const [confirmReact, setConfirmReact] = useState(false)
   const [motivoBaja, setMotivoBaja] = useState('')
+  const [tipoCese, setTipoCese] = useState('')
+  const [especificacionCese, setEspecificacionCese] = useState('')
   const { state } = useApp()
 
   const empresasGrupo = state.empresasGrupo || []
@@ -832,13 +834,39 @@ function FichaTrabajador({ t, onBack, isAdmin, isSoma, isRRHH, isRemu, dispatch,
       {confirmBaja && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
-            <h3 className="font-semibold text-gray-800">Dar de Baja — {fullApellidos(t)}</h3>
-            <div><label className="text-xs font-medium text-gray-600 block mb-1">Motivo de baja *</label>
-              <textarea className="input" rows={3} value={motivoBaja} onChange={e=>setMotivoBaja(e.target.value)} required /></div>
+            <h3 className="font-semibold text-gray-800 text-red-700">Dar de Baja — {fullApellidos(t)}</h3>
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Tipo de cese *</label>
+              <select className="input" value={tipoCese} onChange={e=>{ setTipoCese(e.target.value); setEspecificacionCese('') }} required>
+                <option value="">— Seleccionar —</option>
+                <option value="Motivos familiares">Motivos familiares</option>
+                <option value="Inasistencia">Inasistencia</option>
+                <option value="Evaluación">Evaluación</option>
+                <option value="Mejor oferta">Mejor oferta</option>
+                <option value="Otros">Otros (especificar)</option>
+              </select>
+            </div>
+            {tipoCese === 'Otros' && (
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Especificar motivo *</label>
+                <textarea className="input" rows={2} placeholder="Describe el motivo..." value={especificacionCese} onChange={e=>setEspecificacionCese(e.target.value)} required />
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-medium text-gray-600 block mb-1">Observaciones adicionales</label>
+              <textarea className="input" rows={2} placeholder="Opcional..." value={motivoBaja} onChange={e=>setMotivoBaja(e.target.value)} />
+            </div>
             <div className="flex gap-3 justify-end">
-              <button onClick={()=>setConfirmBaja(false)} className="btn-secondary">Cancelar</button>
-              <button onClick={()=>{ if(!motivoBaja.trim()) return; dispatch({type:'BAJA_TRABAJADOR',id:t.id,fecha:todayStr(),motivo:motivoBaja,registradoPor:user?.nombre||''}); toast('Trabajador dado de baja'); setConfirmBaja(false); onBack() }}
-                className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">Confirmar Baja</button>
+              <button onClick={()=>{ setConfirmBaja(false); setTipoCese(''); setEspecificacionCese(''); setMotivoBaja('') }} className="btn-secondary">Cancelar</button>
+              <button onClick={()=>{
+                if(!tipoCese) return;
+                if(tipoCese==='Otros' && !especificacionCese.trim()) return;
+                const ceseLabel = tipoCese==='Otros' ? especificacionCese.trim() : tipoCese;
+                dispatch({type:'BAJA_TRABAJADOR',id:t.id,fecha:todayStr(),tipoCese,motivo:ceseLabel+(motivoBaja.trim()?` — ${motivoBaja.trim()}`:''),registradoPor:user?.nombre||''});
+                toast('Trabajador dado de baja');
+                setConfirmBaja(false); setTipoCese(''); setEspecificacionCese(''); setMotivoBaja('');
+                onBack()
+              }} className="bg-red-600 hover:bg-red-700 text-white text-sm px-4 py-2 rounded-lg font-medium">Confirmar Baja</button>
             </div>
           </div>
         </div>

@@ -191,6 +191,7 @@ function patchMissing(parsed) {
   if (!parsed.empresasGrupo) parsed.empresasGrupo = []
   if (!parsed.clientesRRHH) parsed.clientesRRHH = []
   if (!parsed.historialAsignaciones) parsed.historialAsignaciones = []
+  if (!parsed.trabajadores) parsed.trabajadores = []
   // Parchar usuarios: añadir campos de asignación RRHH si no existen
   if (parsed.usuarios) {
     parsed.usuarios = parsed.usuarios.map(u => ({
@@ -1448,6 +1449,46 @@ function reducer(state, action) {
           : c
       ) }; break
     }
+
+    // ── Trabajadores ──────────────────────────────────────────────────────
+    case 'ADD_TRABAJADOR':
+      next = { ...state, trabajadores: [...(state.trabajadores||[]), { id: genId(), correlativo: (state.trabajadores||[]).length + 1, estado: 'Activo', movimientos: [], documentos: {}, antecedentes: [], ...action.payload }] }; break
+    case 'UPDATE_TRABAJADOR':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.id ? { ...t, ...action.payload } : t) }; break
+    case 'BAJA_TRABAJADOR':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.id
+        ? { ...t, estado: 'Baja', fechaBaja: action.fecha, motivoBaja: action.motivo, tipoCese: action.tipoCese || '',
+            movimientos: [...(t.movimientos||[]), { id: genId(), tipo: 'Baja', fecha: action.fecha, detalle: action.motivo, tipoCese: action.tipoCese || '', registradoPor: action.registradoPor || '' }] }
+        : t) }; break
+    case 'REACTIVAR_TRABAJADOR':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.id
+        ? { ...t, estado: 'Activo', fechaBaja: null, motivoBaja: null,
+            movimientos: [...(t.movimientos||[]), { id: genId(), tipo: 'Reactivación', fecha: action.fecha, detalle: action.motivo || '', registradoPor: action.registradoPor || '' }] }
+        : t) }; break
+    case 'ADD_CERT_TRABAJADOR':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.trabajadorId
+        ? { ...t, documentos: { ...(t.documentos||{}), [action.cert.tipo]: action.cert } }
+        : t) }; break
+    case 'ADD_ARCHIVO_DOC_TRABAJADOR':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.id
+        ? { ...t, documentos: { ...(t.documentos||{}), [action.docKey]: {
+              ...(t.documentos?.[action.docKey]||{}),
+              archivos: [...((t.documentos?.[action.docKey]?.archivos)||[]), action.archivo]
+            }}}
+        : t) }; break
+    case 'UPDATE_DOCS_TRABAJADOR':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.id
+        ? { ...t, documentos: { ...(t.documentos||{}), [action.docKey]: {
+              ...(t.documentos?.[action.docKey]||{}), ...action.payload,
+              actualizadoPor: action.actualizadoPor, actualizadoEn: new Date().toISOString()
+            }}}
+        : t) }; break
+    case 'ADD_ARCHIVO_LEGAJO':
+      next = { ...state, trabajadores: (state.trabajadores||[]).map(t => t.id===action.id
+        ? { ...t, legajo: { ...(t.legajo||{}), [action.categoria]: [
+              ...((t.legajo?.[action.categoria])||[]), action.archivo
+            ]}}
+        : t) }; break
 
     // ── Asignación / Rotación de Personal ────────────────────────────────
     case 'CAMBIAR_ASIGNACION': {

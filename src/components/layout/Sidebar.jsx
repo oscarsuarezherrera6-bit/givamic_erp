@@ -6,7 +6,7 @@ import {
   HomeIcon, DocumentTextIcon,
   WrenchScrewdriverIcon, Cog6ToothIcon, ShieldCheckIcon, UserGroupIcon,
   ShoppingCartIcon, ClipboardDocumentCheckIcon,
-  BuildingStorefrontIcon, ScaleIcon, MagnifyingGlassCircleIcon,
+  BuildingStorefrontIcon, BuildingOffice2Icon, ScaleIcon, MagnifyingGlassCircleIcon,
   ClipboardDocumentListIcon, CurrencyDollarIcon, BanknotesIcon,
   ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, ChevronDownIcon, XMarkIcon, StarIcon,
   PresentationChartBarIcon, LockClosedIcon
@@ -60,12 +60,14 @@ const GRUPOS = [
     items: [
       { to: '/req-pago',               label: 'Req. de Pago',         Icon: CurrencyDollarIcon,           modulo: 'req-pago' },
       { to: '/cuentas-por-pagar',      label: 'Cuentas por Pagar',    Icon: BanknotesIcon,                modulo: 'cuentas-por-pagar' },
+      { to: '/facturacion-clientes',  label: 'Facturación Clientes', Icon: CurrencyDollarIcon,           modulo: 'facturacion-clientes' },
     ]
   },
   {
     label: 'ADMINISTRACION',
     items: [
       { to: '/maestros',       label: 'Maestros',        Icon: Cog6ToothIcon,              modulo: 'maestros' },
+      { to: '/empresas-clientes', label: 'Empresas y Clientes', Icon: BuildingOffice2Icon,     modulo: 'empresas-clientes' },
       { to: '/auditoria',      label: 'Auditoria',       Icon: MagnifyingGlassCircleIcon,  modulo: 'auditoria' },
       { to: '/reportes',       label: 'Reportes',        Icon: PresentationChartBarIcon,   modulo: 'reportes' },
       { to: '/roles-permisos', label: 'Roles y Permisos', Icon: LockClosedIcon,            modulo: 'roles-permisos' },
