@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import ExcelJS from 'exceljs'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/layout/Toast'
 import Modal from '../components/common/Modal'
 import PageHeader from '../components/common/PageHeader'
@@ -8,13 +9,15 @@ import Confirm from '../components/common/Confirm'
 import { fmtDate, genId, todayISO } from '../utils/helpers'
 import {
   PlusIcon, ArrowUpIcon, EyeIcon,
-  TrashIcon, UserIcon, ArrowPathIcon
+  TrashIcon, UserIcon, ArrowPathIcon,
+  CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, ChevronDownIcon, ChevronUpIcon
 } from '@heroicons/react/24/outline'
 
 const TAB_DASHBOARD    = 'Dashboard'
 const TAB_STOCK        = 'Stock'
 const TAB_ENTREGAS     = 'Entregas'
 const TAB_DEVOLUCIONES = 'Devoluciones'
+const TAB_DESDE_REQ    = 'Desde REQ'
 
 // ── Helpers de kit ────────────────────────────────────────
 function useKitHelpers() {
@@ -394,6 +397,244 @@ function DevolucionForm({ onClose, entregaId = null, trabajadorNombreInit = '', 
 }
 
 // ── Módulo principal ──────────────────────────────────────
+
+// ── Tab Desde REQ ──────────────────────────────────────────
+function TabDesdeREQ({ kits, dispatch, toast, user, isCoordLogistica, isAdmin }) {
+  const [kitAbierto, setKitAbierto] = useState(null)
+  const [despachoForm, setDespachoForm] = useState({})
+
+  const kitDetalle = kits.find(k => k.id === kitAbierto)
+
+  const estadoColor = {
+    'Pendiente':             'bg-amber-100 text-amber-700',
+    'Pendiente a Completar': 'bg-orange-100 text-orange-700',
+    'Atendido':              'bg-emerald-100 text-emerald-700',
+  }
+  const estadoIcon = {
+    'Pendiente':             ClockIcon,
+    'Pendiente a Completar': ExclamationTriangleIcon,
+    'Atendido':              CheckCircleIcon,
+  }
+
+  function initForm(kit) {
+    const form = {}
+    ;(kit.items || []).forEach((_, idx) => {
+      form[idx] = { cantNuevo: 0, cantUsado: 0 }
+    })
+    setDespachoForm(form)
+    setKitAbierto(kit.id)
+  }
+
+  function handleDespachar() {
+    if (!kitDetalle) return
+    const despacho = Object.entries(despachoForm).map(([idx, v]) => ({
+      idx: Number(idx),
+      cantNuevo: Number(v.cantNuevo) || 0,
+      cantUsado: Number(v.cantUsado) || 0,
+    }))
+    const totalEnviado = despacho.reduce((s, d) => s + d.cantNuevo + d.cantUsado, 0)
+    if (totalEnviado === 0) { toast('Ingresa al menos una cantidad a enviar', 'error'); return }
+
+    dispatch({
+      type: 'DESPACHAR_KIT_INGRESO',
+      kitId:      kitDetalle.id,
+      despacho,
+      fecha:      new Date().toISOString().slice(0, 10),
+      despachoPor: user?.nombre || '',
+    })
+    toast('Despacho registrado correctamente', 'success')
+    setKitAbierto(null)
+    setDespachoForm({})
+  }
+
+  if (kitDetalle) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setKitAbierto(null)} className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
+            <ChevronUpIcon className="w-3.5 h-3.5 rotate-270" />← Volver
+          </button>
+          <h2 className="text-sm font-bold text-[#1e3a5f]">{kitDetalle.reqNumero} — {kitDetalle.personal || 'Sin nombre'}</h2>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoColor[kitDetalle.estado] || 'bg-gray-100 text-gray-600'}`}>
+            {kitDetalle.estado}
+          </span>
+        </div>
+
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 space-y-3">
+          <div className="grid grid-cols-3 gap-3 text-xs text-gray-600">
+            <div><span className="text-gray-400">Personal: </span><strong>{kitDetalle.personal || '—'}</strong></div>
+            <div><span className="text-gray-400">Sede: </span><strong>{kitDetalle.sede || '—'}</strong></div>
+            <div><span className="text-gray-400">Área: </span><strong>{kitDetalle.area || '—'}</strong></div>
+            <div><span className="text-gray-400">Derivado por: </span><strong>{kitDetalle.derivadoPor || '—'}</strong></div>
+            <div><span className="text-gray-400">Fecha: </span><strong>{kitDetalle.fechaDerivado || '—'}</strong></div>
+            <div><span className="text-gray-400">REQ: </span><strong>{kitDetalle.reqNumero}</strong></div>
+          </div>
+        </div>
+
+        {/* Tabla de ítems */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Ítems a despachar</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-gray-500 font-medium">Prenda / Artículo</th>
+                  <th className="px-3 py-2 text-center text-gray-500 font-medium">Solicitado</th>
+                  <th className="px-3 py-2 text-center text-gray-500 font-medium">Enviado ant.</th>
+                  <th className="px-3 py-2 text-center text-teal-600 font-medium">Nuevo ↓</th>
+                  <th className="px-3 py-2 text-center text-amber-600 font-medium">Usado ↓</th>
+                  <th className="px-3 py-2 text-center text-gray-500 font-medium">Sin stock</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {(kitDetalle.items || []).map((it, idx) => {
+                  const enviado = (it.cantNuevo || 0) + (it.cantUsado || 0)
+                  const faltante = Math.max(0, it.cantidad - enviado)
+                  const fv = despachoForm[idx] || { cantNuevo: 0, cantUsado: 0 }
+                  const sinStock = Math.max(0, faltante - (Number(fv.cantNuevo)||0) - (Number(fv.cantUsado)||0))
+                  const completo = enviado >= it.cantidad
+                  return (
+                    <tr key={idx} className={completo ? 'bg-emerald-50/50' : ''}>
+                      <td className="px-4 py-2.5">
+                        <p className="font-medium text-gray-800">{it.descripcion}</p>
+                        {it.talla && <p className="text-gray-400 text-[10px]">Talla: {it.talla}</p>}
+                        {completo && <span className="text-[10px] text-emerald-600 font-medium">✓ Completo</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-center font-medium text-gray-700">{it.cantidad}</td>
+                      <td className="px-3 py-2.5 text-center text-gray-500">
+                        {enviado > 0 ? <span className="text-blue-600 font-medium">{enviado}</span> : '—'}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        {!completo ? (
+                          <input type="number" min="0" max={faltante}
+                            className="w-14 border border-teal-300 rounded-lg text-center py-1 text-xs focus:ring-1 focus:ring-teal-400"
+                            value={fv.cantNuevo || ''}
+                            onChange={e => setDespachoForm(f => ({ ...f, [idx]: { ...f[idx], cantNuevo: e.target.value } }))}
+                            placeholder="0"
+                          />
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        {!completo ? (
+                          <input type="number" min="0" max={faltante}
+                            className="w-14 border border-amber-300 rounded-lg text-center py-1 text-xs focus:ring-1 focus:ring-amber-400"
+                            value={fv.cantUsado || ''}
+                            onChange={e => setDespachoForm(f => ({ ...f, [idx]: { ...f[idx], cantUsado: e.target.value } }))}
+                            placeholder="0"
+                          />
+                        ) : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        {!completo
+                          ? <span className={sinStock > 0 ? 'text-red-500 font-medium' : 'text-gray-400'}>{sinStock > 0 ? sinStock : '—'}</span>
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Historial de despachos */}
+        {(kitDetalle.despachos || []).length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <h3 className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">Historial de despachos</h3>
+            <div className="space-y-1">
+              {kitDetalle.despachos.map((d, i) => (
+                <div key={d.id || i} className="flex items-center gap-2 text-xs text-gray-600 py-1 border-b border-gray-50 last:border-0">
+                  <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                  <span className="font-medium">{d.fecha}</span>
+                  <span className="text-gray-400">por</span>
+                  <span>{d.despachoPor || '—'}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {kitDetalle.estado !== 'Atendido' && (
+          <div className="flex justify-end">
+            <button onClick={handleDespachar}
+              className="bg-[#1e3a5f] hover:bg-[#16304f] text-white px-5 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+              <CheckCircleIcon className="w-4 h-4" />Registrar Despacho
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Lista de kits
+  const pendientes   = kits.filter(k => k.estado === 'Pendiente')
+  const parciales    = kits.filter(k => k.estado === 'Pendiente a Completar')
+  const atendidos    = kits.filter(k => k.estado === 'Atendido')
+
+  function KitCard({ k }) {
+    const EIcon = estadoIcon[k.estado] || ClockIcon
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-3 hover:shadow-md transition-shadow">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+            k.estado === 'Atendido' ? 'bg-emerald-100' : k.estado === 'Pendiente a Completar' ? 'bg-orange-100' : 'bg-amber-100'
+          }`}>
+            <EIcon className={`w-4.5 h-4.5 ${
+              k.estado === 'Atendido' ? 'text-emerald-600' : k.estado === 'Pendiente a Completar' ? 'text-orange-600' : 'text-amber-600'
+            }`} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-800 truncate">{k.personal || 'Sin nombre'}</p>
+            <p className="text-xs text-gray-400">{k.reqNumero} · {k.sede || '—'} · {k.area || '—'}</p>
+            <p className="text-[10px] text-gray-400">Derivado: {k.fechaDerivado || '—'} por {k.derivadoPor || '—'}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${estadoColor[k.estado] || 'bg-gray-100 text-gray-600'}`}>
+            {k.estado}
+          </span>
+          <button onClick={() => initForm(k)}
+            className="bg-[#1e3a5f] hover:bg-[#16304f] text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+            <EyeIcon className="w-3.5 h-3.5" />{k.estado === 'Atendido' ? 'Ver' : 'Atender'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {kits.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+          <ClockIcon className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-500">No hay kits derivados desde Requerimientos.</p>
+          <p className="text-xs text-gray-400 mt-1">Cuando el Coordinador de Logística derive un REQ, aparecerá aquí.</p>
+        </div>
+      )}
+      {pendientes.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-amber-700 uppercase tracking-wide">⏳ Pendientes ({pendientes.length})</h3>
+          {pendientes.map(k => <KitCard key={k.id} k={k} />)}
+        </div>
+      )}
+      {parciales.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-orange-700 uppercase tracking-wide">🟡 Pendiente a Completar ({parciales.length})</h3>
+          {parciales.map(k => <KitCard key={k.id} k={k} />)}
+        </div>
+      )}
+      {atendidos.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">✅ Atendidos ({atendidos.length})</h3>
+          {atendidos.map(k => <KitCard key={k.id} k={k} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Uniformes() {
   const { state, dispatch } = useApp()
   const toast = useToast()
@@ -408,8 +649,10 @@ export default function Uniformes() {
   const [kardexPage, setKardexPage] = useState(0)
   const KARDEX_PAGE_SIZE = 25
 
+  const { user, isAdmin, isCoordLogistica } = useAuth()
   const entregas     = state.uniformeEntregas     || []
   const devoluciones = state.uniformeDevoluciones || []
+  const kitsDesdeREQ = state.kitsDesdeREQ         || []
 
   // ── Stock agrupado por praneda ────────────────────────
   const stockGroups = useMemo(() => {
@@ -602,7 +845,7 @@ export default function Uniformes() {
     })
   }
 
-  const TABS = [TAB_DASHBOARD, TAB_STOCK, TAB_ENTREGAS, TAB_DEVOLUCIONES]
+  const TABS = [TAB_DASHBOARD, TAB_STOCK, TAB_ENTREGAS, TAB_DEVOLUCIONES, TAB_DESDE_REQ]
 
   return (
     <div className="page-container">
@@ -631,8 +874,13 @@ export default function Uniformes() {
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         {TABS.map(t => (
           <button key={t} onClick={()=>setTab(t)}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${tab===t ? 'bg-white text-[#1e3a5f] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex items-center gap-1.5 ${tab===t ? 'bg-white text-[#1e3a5f] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             {t}
+            {t === TAB_DESDE_REQ && kitsDesdeREQ.filter(k => k.estado !== 'Atendido').length > 0 && (
+              <span className="bg-amber-400 text-amber-900 text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                {kitsDesdeREQ.filter(k => k.estado !== 'Atendido').length}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -994,6 +1242,17 @@ export default function Uniformes() {
             trabajadorDNIInit={devEntregaId ? (entregas.find(e=>e.id===devEntregaId)?.trabajadorDNI||'') : ''} />
         </Modal>
       )}
+      {tab === TAB_DESDE_REQ && (
+        <TabDesdeREQ
+          kits={kitsDesdeREQ}
+          dispatch={dispatch}
+          toast={toast}
+          user={user}
+          isAdmin={isAdmin}
+          isCoordLogistica={isCoordLogistica}
+        />
+      )}
+
       {confirmBox && <Confirm {...confirmBox} onCancel={() => setConfirmBox(null)} />}
     </div>
   )

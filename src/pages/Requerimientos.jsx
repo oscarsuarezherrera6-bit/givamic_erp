@@ -13,10 +13,11 @@ import {
   PencilSquareIcon, PaperAirplaneIcon, NoSymbolIcon,
   ExclamationTriangleIcon, ClockIcon, CheckBadgeIcon,
   ArrowPathIcon, MagnifyingGlassIcon, FunnelIcon,
-  ShoppingCartIcon, BuildingStorefrontIcon, ArrowUpCircleIcon
+  ShoppingCartIcon, BuildingStorefrontIcon, ArrowUpCircleIcon,
+  InboxArrowDownIcon
 } from '@heroicons/react/24/outline'
 
-const ESTADOS = ['Borrador','Pendiente Aprobación Jefe','Pendiente de Aprobación','Aprobado - En Almacén','Aprobado con Ajustes - En Almacén','Pendiente de Aprobación Gerencial','Aprobado por Gerencia','En Consolidado','En Orden de Compra','Despachado Parcialmente','Completado','Rechazado','Rechazado por Gerencia','Pospuesto - Consolidado Gerencial','Anulado']
+const ESTADOS = ['Borrador','Pendiente Aprobación Jefe','Pendiente de Aprobación','Aprobado - En Almacén','Aprobado con Ajustes - En Almacén','Pendiente de Aprobación Gerencial','Aprobado por Gerencia','En Consolidado','En Orden de Compra','Despachado Parcialmente','Derivado a Kit','Completado','Rechazado','Rechazado por Gerencia','Pospuesto - Consolidado Gerencial','Anulado']
 const PRIORIDADES = ['Alta','Media','Baja']
 const TIPOS = ['Bien','Servicio']
 const UNIDADES = ['UND','GL','LT','KG','ML','MT','M2','KIT','CJA','BOL','BID','PKT','SRV','RLL','PAR','JGO']
@@ -651,7 +652,7 @@ function ReqForm({ initial, sedes, productos, user, inventario, onSave, onBack }
 }
 
 // ── DETAIL VIEW ────────────────────────────────────────────────────────────────
-function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJefe, onAprobarPaso1, onConsolidar, onElevarGerencia, onAprobarGerencia, onRechazarGerencia, onPosponerGerencia, isAdmin, isCoordGen, isCoordLogistica, isGerencia, isJefeRRHH, logo, inventario, user, usuarios }) {
+function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJefe, onAprobarPaso1, onConsolidar, onElevarGerencia, onAprobarGerencia, onRechazarGerencia, onPosponerGerencia, onDerivarKit, isAdmin, isCoordGen, isCoordLogistica, isGerencia, isJefeRRHH, logo, inventario, user, usuarios }) {
   const toast = useToast()
   const { state: appState } = useApp()
   const productos = appState.productos || []
@@ -757,7 +758,8 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
   }
 
   const EIcon = ESTADO_ICON[req.estado] || ClockIcon
-  const canDespachar       = (isAdmin || isCoordLogistica) && ['Aprobado - En Almacén','Aprobado con Ajustes - En Almacén','Aprobado por Gerencia','En Consolidado'].includes(req.estado)
+  const canDespachar       = (isAdmin || isCoordLogistica) && ['Aprobado - En Almacén','Aprobado con Ajustes - En Almacén','Aprobado por Gerencia','En Consolidado'].includes(req.estado) && !req.kitId
+  const canDerivarKit      = (isAdmin || isCoordLogistica) && ['Aprobado - En Almacén','Aprobado con Ajustes - En Almacén','Aprobado por Gerencia'].includes(req.estado) && !req.kitId
   const canElevarGerencia  = (isAdmin || isCoordLogistica) && ['Aprobado - En Almacén','Aprobado con Ajustes - En Almacén'].includes(req.estado)
   const canConsolidar      = (isAdmin || isCoordLogistica) && ['Aprobado - En Almacén','Aprobado con Ajustes - En Almacén'].includes(req.estado)
   const canAprobarGen      = (isAdmin || isCoordGen) && req.estado === 'Pendiente de Aprobación'
@@ -808,6 +810,16 @@ function ReqDetail({ req, sedes, onBack, onEdit, onAnular, onAprobar, onAprobarJ
             <button onClick={() => setShowAprobPanel(true)} className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-2.5">
               <BuildingStorefrontIcon className="w-3.5 h-3.5" />Paso 3: Atender en Almacén
             </button>
+          )}
+          {canDerivarKit && !showAprobPanel && (
+            <button onClick={() => onDerivarKit && onDerivarKit(req)} className="bg-teal-600 hover:bg-teal-700 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-medium">
+              <InboxArrowDownIcon className="w-3.5 h-3.5" />Derivar a Kit de Ingreso
+            </button>
+          )}
+          {req.kitId && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-teal-100 text-teal-700">
+              <InboxArrowDownIcon className="w-3.5 h-3.5" />Derivado a Kit de Ingreso
+            </span>
           )}
           {canAprobarGerencia && !showGerenciaPanel && (
             <button onClick={() => setShowGerenciaPanel(true)} className="bg-orange-600 hover:bg-orange-700 text-white px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-medium">
@@ -1565,6 +1577,22 @@ export default function Requerimientos() {
     setDetailId(null)
   }
 
+  const handleDerivarKit = (req) => {
+    dispatch({
+      type: 'DERIVAR_KIT_INGRESO',
+      reqId:      req.id,
+      reqNumero:  req.numero,
+      personal:   req.requeridoPorNombre || req.solicitadoPor || '',
+      sede:       req.sedeName || (state.sedes || []).find(s => s.id === req.sedeId)?.nombre || '',
+      area:       req.areaSolicitante || '',
+      derivadoPor: user?.nombre || '',
+      fecha:      todayISO(),
+      items:      req.items || [],
+    })
+    toast('REQ derivado a Kit de Ingreso — el asistente lo verá en Kit de Ingreso > Desde REQ', 'success')
+    handleBack()
+  }
+
   const handlePosponerGerencia = ({ id, pospuestoPor, motivoPostergacion }) => {
     dispatch({ type: 'POSPONER_GERENCIA', id, pospuestoPor, motivoPostergacion })
     toast('REQ pospuesto al Consolidado Gerencial')
@@ -1602,10 +1630,12 @@ export default function Requerimientos() {
           onRechazarGerencia={handleRechazarGerencia}
           onPosponerGerencia={handlePosponerGerencia}
           onAnular={() => handleAnular(detailReq)}
+          onDerivarKit={handleDerivarKit}
           logo={state.logo || state.config?.logoBase64 || null}
           isAdmin={isAdmin}
           isCoordGen={isCoordGen}
           isCoordLogistica={isCoordLogistica}
+          isGerencia={isGerencia}
           isJefeRRHH={isJefeRRHH}
           inventario={state.inventario || {}}
           user={user}

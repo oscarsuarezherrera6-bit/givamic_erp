@@ -179,6 +179,7 @@ function patchMissing(parsed) {
   if (!parsed.evaluacionesProveedor) parsed.evaluacionesProveedor = []
   if (!parsed.uniformeEntregas) parsed.uniformeEntregas = []
   if (!parsed.uniformeDevoluciones) parsed.uniformeDevoluciones = []
+  if (!parsed.kitsDesdeREQ) parsed.kitsDesdeREQ = []
   if (!parsed.conformidades) parsed.conformidades = []
   if (!parsed.rqs) parsed.rqs = []
   if (!parsed.epps) parsed.epps = []
@@ -809,6 +810,64 @@ function reducer(state, action) {
     }
     case 'DELETE_UNIFORME_DEVOLUCION':
       next = { ...state, uniformeDevoluciones: (state.uniformeDevoluciones||[]).filter(d => d.id !== action.id) }; break
+
+    case 'DERIVAR_KIT_INGRESO': {
+      const kitNuevo = {
+        id: genId(),
+        reqId:      action.reqId,
+        reqNumero:  action.reqNumero,
+        personal:   action.personal,
+        sede:       action.sede,
+        area:       action.area,
+        derivadoPor: action.derivadoPor,
+        fechaDerivado: action.fecha,
+        items: (action.items || []).map(it => ({
+          id:          it.id,
+          descripcion: it.descripcion || it.nombre || '',
+          talla:       it.talla || '',
+          cantidad:    Number(it.cantidadAprobada || it.cantidad || 1),
+          cantNuevo:   0,
+          cantUsado:   0,
+        })),
+        estado:    'Pendiente',
+        despachos: [],
+      }
+      next = {
+        ...state,
+        kitsDesdeREQ: [...(state.kitsDesdeREQ || []), kitNuevo],
+        requerimientos: (state.requerimientos || []).map(r =>
+          r.id === action.reqId ? { ...r, estado: 'Derivado a Kit', kitId: kitNuevo.id } : r
+        ),
+      }
+      break
+    }
+
+    case 'DESPACHAR_KIT_INGRESO': {
+      // action: { kitId, despacho:[{idx, cantNuevo, cantUsado}], fecha, despachoPor }
+      const updKits = (state.kitsDesdeREQ || []).map(k => {
+        if (k.id !== action.kitId) return k
+        const logEntry = { id: genId(), fecha: action.fecha, despachoPor: action.despachoPor, items: action.despacho }
+        const items = k.items.map((it, idx) => {
+          const d = action.despacho.find(x => x.idx === idx)
+          if (!d) return it
+          return {
+            ...it,
+            cantNuevo: (it.cantNuevo || 0) + (Number(d.cantNuevo) || 0),
+            cantUsado: (it.cantUsado || 0) + (Number(d.cantUsado) || 0),
+          }
+        })
+        const todosCompletos = items.every(it => (it.cantNuevo + it.cantUsado) >= it.cantidad)
+        const algunoEnviado  = items.some(it => (it.cantNuevo + it.cantUsado) > 0)
+        const estado = todosCompletos ? 'Atendido' : algunoEnviado ? 'Pendiente a Completar' : 'Pendiente'
+        return { ...k, items, estado, despachos: [...(k.despachos || []), logEntry] }
+      })
+      const kitFinalState = updKits.find(k => k.id === action.kitId)
+      const updReqs = kitFinalState?.estado === 'Atendido'
+        ? (state.requerimientos || []).map(r => r.kitId === action.kitId ? { ...r, estado: 'Completado' } : r)
+        : state.requerimientos
+      next = { ...state, kitsDesdeREQ: updKits, requerimientos: updReqs }
+      break
+    }
 
     case 'ADD_EPP':
       next = { ...state, epps: [...(state.epps||[]), { id: genId(), ...action.payload }] }; break
