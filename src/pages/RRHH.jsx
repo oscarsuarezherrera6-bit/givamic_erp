@@ -1332,68 +1332,112 @@ function TabDashboard({ isRRHH, isAdmin, isSoma, isRemu }) {
 
       {/* Rotación por sede */}
       <div className="card p-4">
-        <h3 className="font-semibold text-gray-700 mb-1">Rotación por sede / local</h3>
-        <p className="text-xs text-gray-400 mb-3">Trabajadores dados de baja agrupados por sede</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="font-semibold text-gray-800">Rotación por sede / local</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Bajas agrupadas por lugar de asignación</p>
+          </div>
+          {bajas.length > 0 && (
+            <span className="text-xs font-semibold bg-red-50 text-red-600 border border-red-100 px-3 py-1 rounded-full">
+              {bajas.length} baja{bajas.length !== 1 ? 's' : ''} total{bajas.length !== 1 ? 'es' : ''}
+            </span>
+          )}
+        </div>
         {bajas.length === 0
-          ? <p className="text-sm text-gray-400">Sin bajas registradas.</p>
+          ? (
+            <div className="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-lg border border-dashed border-gray-200">
+              Sin bajas registradas
+            </div>
+          )
           : (() => {
-              // Construir mapa localId → nombre
+              // Construir mapas de resolución
               const localMap = {}
+              const clienteMap = {}
+              const empresaMap = {}
               clientesRRHH.forEach(cli => {
-                (cli.locales || []).forEach(loc => { localMap[loc.id] = { nombre: loc.nombre, cliente: cli.nombre } })
+                clienteMap[cli.id] = cli.nombre
+                ;(cli.locales || []).forEach(loc => {
+                  localMap[loc.id] = { nombre: loc.nombre, cliente: cli.nombre }
+                })
               })
-              // También mapear sedes antiguas como fallback
+              empresasGrupo.forEach(eg => { empresaMap[eg.id] = eg.nombre })
               ;(state.sedes || []).forEach(s => {
                 if (!localMap[s.id]) localMap[s.id] = { nombre: s.nombre, cliente: '' }
               })
-              // Agrupar bajas por local
+
+              // Agrupar bajas — usar clienteRRHHId como fallback cuando el local no resuelve
               const grouped = {}
               bajas.forEach(t => {
-                const key = t.localRRHHId || '__sin_sede__'
-                if (!grouped[key]) grouped[key] = []
-                grouped[key].push(t)
+                const localInfo = localMap[t.localRRHHId]
+                const key = localInfo
+                  ? (t.localRRHHId || '__sin__')
+                  : (t.clienteRRHHId ? `cli_${t.clienteRRHHId}` : (t.empresaGrupoId ? `eg_${t.empresaGrupoId}` : '__sin__'))
+                if (!grouped[key]) grouped[key] = { key, trabajadores: [], localInfo, t }
+                grouped[key].trabajadores.push(t)
               })
-              const rows = Object.entries(grouped)
-                .map(([id, lista]) => ({
-                  id,
-                  nombre: id === '__sin_sede__' ? 'Sin sede asignada' : (localMap[id]?.nombre || 'Sede no encontrada'),
-                  cliente: id === '__sin_sede__' ? '' : (localMap[id]?.cliente || ''),
-                  cnt: lista.length,
-                  ceseDetalle: lista.reduce((acc, t) => {
-                    const c = t.tipoCese || 'Otros'
-                    acc[c] = (acc[c] || 0) + 1
-                    return acc
-                  }, {})
-                }))
-                .sort((a,b) => b.cnt - a.cnt)
-              const maxR = Math.max(...rows.map(r=>r.cnt), 1)
+
               const TAG_COLOR = {
-                'Motivos familiares': 'bg-blue-100 text-blue-700',
-                'Inasistencia':       'bg-amber-100 text-amber-700',
-                'Evaluación':         'bg-purple-100 text-purple-700',
-                'Mejor oferta':       'bg-green-100 text-green-700',
-                'Otros':              'bg-gray-100 text-gray-600',
+                'Motivos familiares': 'bg-blue-50 text-blue-700 border border-blue-100',
+                'Inasistencia':       'bg-amber-50 text-amber-700 border border-amber-100',
+                'Evaluación':         'bg-purple-50 text-purple-700 border border-purple-100',
+                'Mejor oferta':       'bg-green-50 text-green-700 border border-green-100',
+                'Otros':              'bg-gray-100 text-gray-600 border border-gray-200',
               }
+
+              const rows = Object.values(grouped).map(g => {
+                let nombre = 'Sin sede asignada'
+                let subtitulo = ''
+                if (g.localInfo) {
+                  nombre = g.localInfo.nombre
+                  subtitulo = g.localInfo.cliente
+                } else if (g.key.startsWith('cli_')) {
+                  const cliId = g.key.replace('cli_', '')
+                  nombre = clienteMap[cliId] || 'Cliente sin nombre'
+                  subtitulo = empresaMap[g.trabajadores[0]?.empresaGrupoId] || ''
+                } else if (g.key.startsWith('eg_')) {
+                  const egId = g.key.replace('eg_', '')
+                  nombre = empresaMap[egId] || 'Empresa sin nombre'
+                }
+                const ceseDetalle = g.trabajadores.reduce((acc, t) => {
+                  const c = t.tipoCese || 'Otros'
+                  acc[c] = (acc[c] || 0) + 1
+                  return acc
+                }, {})
+                return { key: g.key, nombre, subtitulo, cnt: g.trabajadores.length, ceseDetalle }
+              }).sort((a,b) => b.cnt - a.cnt)
+
+              const maxR = Math.max(...rows.map(r=>r.cnt), 1)
+
               return (
-                <div className="space-y-3">
-                  {rows.map(r => (
-                    <div key={r.id} className="border border-gray-100 rounded-lg p-3">
-                      <div className="flex items-center gap-3 mb-1.5">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-800 truncate">{r.nombre}</p>
-                          {r.cliente && <p className="text-xs text-gray-400">{r.cliente}</p>}
+                <div className="space-y-2">
+                  {rows.map((r, i) => (
+                    <div key={r.key} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-500 shrink-0 mt-0.5">
+                          {i + 1}
                         </div>
-                        <span className="text-lg font-bold text-red-600 shrink-0">{r.cnt}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-2">
-                        <div className="h-1.5 rounded-full bg-red-400" style={{width:`${Math.round(r.cnt/maxR*100)}%`}}/>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {Object.entries(r.ceseDetalle).map(([tipo, n]) => (
-                          <span key={tipo} className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${TAG_COLOR[tipo] || 'bg-gray-100 text-gray-600'}`}>
-                            {tipo}: {n}
-                          </span>
-                        ))}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-800 truncate">{r.nombre}</p>
+                              {r.subtitulo && <p className="text-xs text-gray-400">{r.subtitulo}</p>}
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-xl font-extrabold text-red-600">{r.cnt}</span>
+                              <span className="text-xs text-gray-400">baja{r.cnt !== 1 ? 's' : ''}</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mb-2.5">
+                            <div className="h-1.5 rounded-full bg-red-400 transition-all" style={{width:`${Math.round(r.cnt/maxR*100)}%`}}/>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {Object.entries(r.ceseDetalle).map(([tipo, n]) => (
+                              <span key={tipo} className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium ${TAG_COLOR[tipo] || 'bg-gray-100 text-gray-600'}`}>
+                                {tipo} · {n}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
