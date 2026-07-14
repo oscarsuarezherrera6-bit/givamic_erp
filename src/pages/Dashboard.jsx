@@ -182,6 +182,44 @@ function HighlightCard({ label1, value1, label2, value2, chartData, trendVal }) 
   )
 }
 
+/** Tarjeta KPI con barra de progreso y semáforo meta */
+function KpiCard({ label, valor, unidad = '%', meta, sentido = 'mayor', descripcion, sub }) {
+  const cumple = valor === null ? null : sentido === 'mayor' ? valor >= meta : valor <= meta
+  const pct = unidad === '%' ? valor : null
+  const barPct = pct !== null ? Math.min(100, pct) : Math.min(100, (valor / (meta * 2)) * 100)
+  const barColor = cumple === null ? '#d1d5db' : cumple ? '#10b981' : '#ef4444'
+  const displayVal = valor === null ? '—' : unidad === '%' ? `${valor}%` : `${valor} ${unidad}`
+  const metaLabel = unidad === '%' ? `Meta: ${sentido === 'mayor' ? '≥' : '≤'}${meta}%` : `Meta: ${sentido === 'mayor' ? '≥' : '≤'}${meta} ${unidad}`
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col gap-2.5">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-semibold text-gray-500 leading-tight">{label}</p>
+        {cumple !== null && (
+          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+            cumple ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'
+          }`}>{cumple ? '✓ Cumple' : '✕ No cumple'}</span>
+        )}
+      </div>
+      <div className="flex items-baseline gap-1">
+        <p className={`text-2xl font-black leading-none ${
+          cumple === null ? 'text-gray-300' : cumple ? 'text-emerald-600' : 'text-red-500'
+        }`}>{displayVal}</p>
+      </div>
+      <div className="space-y-1">
+        <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${barPct}%`, background: barColor }} />
+        </div>
+        <div className="flex justify-between items-center">
+          <p className="text-[10px] text-gray-400">{metaLabel}</p>
+          {sub && <p className="text-[10px] text-gray-400">{sub}</p>}
+        </div>
+      </div>
+      {descripcion && <p className="text-[10px] text-gray-400 leading-tight border-t border-gray-50 pt-1.5">{descripcion}</p>}
+    </div>
+  )
+}
+
 /** Ciclo operativo horizontal */
 function CicloStep({ item, isLast, onClick }) {
   return (
@@ -230,7 +268,8 @@ export default function Dashboard() {
   const {
     facturas = [], movimientos = [], inventario = {},
     productos = [], requerimientos = [], sedes = [],
-    ordenesCompra = [], epps = [], uniformeEntregas = [], uniformeStock = {}
+    ordenesCompra = [], epps = [], uniformeEntregas = [], uniformeStock = {},
+    conformidades = [], solicitudesCotizacion = []
   } = state
 
   const provMap = useMemo(() =>
@@ -292,6 +331,51 @@ export default function Dashboard() {
   const reqPagosMes  = useMemo(() => (state.reqPagos || []).filter(r => r.fecha?.startsWith(thisMonth)).length, [state.reqPagos])
   const reqPagosPend = useMemo(() => (state.reqPagos || []).filter(r => r.estado === 'Pendiente' || r.estado === 'En Revisión').length, [state.reqPagos])
   const cxpPend      = useMemo(() => (state.cuentasPorPagar || []).filter(c => c.estado === 'Pendiente').length, [state.cuentasPorPagar])
+
+  // ── KPIs SIG-FO-093 ────────────────────────────────────────────────────
+  const kpiReqAtendidos = useMemo(() => {
+    if (!requerimientos.length) return null
+    const atendidos = requerimientos.filter(r =>
+      ['Completado','Derivado a Kit','Completado OC','Atendido','Completado - OC Generada'].includes(r.estado)
+    ).length
+    return { valor: Math.round((atendidos / requerimientos.length) * 100), total: requerimientos.length, atendidos }
+  }, [requerimientos])
+
+  const kpiReqObservados = useMemo(() => {
+    if (!requerimientos.length) return null
+    const rechazados = requerimientos.filter(r => r.estado === 'Rechazado').length
+    return { valor: Math.round((rechazados / requerimientos.length) * 100), total: requerimientos.length, rechazados }
+  }, [requerimientos])
+
+  const kpiBienesConformes = useMemo(() => {
+    if (!conformidades.length) return null
+    const totalConf = conformidades.length
+    const conformes = conformidades.filter(c => {
+      if (!c.items || !c.items.length) return c.resultado === 'Conforme'
+      return c.items.every(it => it.estado === 'Conforme')
+    }).length
+    return { valor: Math.round((conformes / totalConf) * 100), total: totalConf, conformes }
+  }, [conformidades])
+
+  const kpiTiempoProveedor = useMemo(() => {
+    const ocMap = Object.fromEntries((ordenesCompra || []).map(o => [o.id, o]))
+    const diffs = (conformidades || [])
+      .filter(c => c.ocId && ocMap[c.ocId] && c.fecha && ocMap[c.ocId].fecha)
+      .map(c => {
+        const dias = (new Date(c.fecha) - new Date(ocMap[c.ocId].fecha)) / 86400000
+        return dias >= 0 ? dias : null
+      }).filter(d => d !== null)
+    if (!diffs.length) return null
+    const promedio = diffs.reduce((s, d) => s + d, 0) / diffs.length
+    return { valor: Math.round(promedio * 10) / 10, total: diffs.length }
+  }, [conformidades, ordenesCompra])
+
+  const kpiCotizaciones3Prov = useMemo(() => {
+    if (!solicitudesCotizacion.length) return null
+    const total = solicitudesCotizacion.length
+    const con3 = solicitudesCotizacion.filter(s => (s.proveedores || []).length >= 3).length
+    return { valor: Math.round((con3 / total) * 100), total, con3 }
+  }, [solicitudesCotizacion])
 
   // ── Gasto chart 6 meses ──────────────────────────────────────────────────
   const gastoChart = useMemo(() =>
@@ -554,6 +638,73 @@ export default function Dashboard() {
             onClick={() => navigate('/cuentas-por-pagar')}
           />
         )}
+      </div>
+
+      {/* ── KPIs SIG-FO-093 ── */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-sm font-bold text-gray-800">Indicadores de Gestión</p>
+            <p className="text-[10px] text-gray-400">SIG-FO-093 · Logística y Compras</p>
+          </div>
+          <span className="text-[10px] bg-[#1e3a5f]/10 text-[#1e3a5f] font-semibold px-2 py-0.5 rounded-full">
+            {[kpiReqAtendidos, kpiReqObservados, kpiBienesConformes, kpiTiempoProveedor, kpiCotizaciones3Prov]
+              .filter(k => {
+                if (!k) return false
+                const val = k.valor
+                if (k === kpiReqObservados) return val <= 5
+                if (k === kpiTiempoProveedor) return val <= 5
+                return val >= 95
+              }).length} / 5 KPIs en meta
+          </span>
+        </div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(5,minmax(0,1fr))' }}>
+          {puedeVer('requerimientos') && (
+            <KpiCard
+              label="% REQ Atendidos"
+              valor={kpiReqAtendidos?.valor ?? null}
+              meta={95} sentido="mayor"
+              sub={kpiReqAtendidos ? `${kpiReqAtendidos.atendidos}/${kpiReqAtendidos.total}` : undefined}
+              descripcion="Requerimientos completados vs total"
+            />
+          )}
+          {puedeVer('requerimientos') && (
+            <KpiCard
+              label="% REQ Observados"
+              valor={kpiReqObservados?.valor ?? null}
+              meta={5} sentido="menor"
+              sub={kpiReqObservados ? `${kpiReqObservados.rechazados} rechazados` : undefined}
+              descripcion="Requerimientos rechazados vs total"
+            />
+          )}
+          {puedeVer('almacen') && (
+            <KpiCard
+              label="Bienes Conformes 1ª Rec."
+              valor={kpiBienesConformes?.valor ?? null}
+              meta={95} sentido="mayor"
+              sub={kpiBienesConformes ? `${kpiBienesConformes.conformes}/${kpiBienesConformes.total}` : undefined}
+              descripcion="Recepciones sin observaciones"
+            />
+          )}
+          {puedeVer('ordenes-compra') && (
+            <KpiCard
+              label="T. Atención Proveedor"
+              valor={kpiTiempoProveedor?.valor ?? null}
+              unidad="días" meta={5} sentido="menor"
+              sub={kpiTiempoProveedor ? `${kpiTiempoProveedor.total} OC evaluadas` : undefined}
+              descripcion="Días OC emitida → recepción conforme"
+            />
+          )}
+          {puedeVer('cotizaciones') && (
+            <KpiCard
+              label="Cotizaciones ≥3 Proveedores"
+              valor={kpiCotizaciones3Prov?.valor ?? null}
+              meta={95} sentido="mayor"
+              sub={kpiCotizaciones3Prov ? `${kpiCotizaciones3Prov.con3}/${kpiCotizaciones3Prov.total}` : undefined}
+              descripcion="Cotizaciones con competencia mínima"
+            />
+          )}
+        </div>
       </div>
 
       {/* ── Ciclo operativo ── */}
