@@ -496,9 +496,12 @@ function TabDesdeREQ({ kits, dispatch, toast, user, isCoordLogistica, isAdmin })
                   const sinStock = Math.max(0, faltante - (Number(fv.cantNuevo)||0) - (Number(fv.cantUsado)||0))
                   const completo = enviado >= it.cantidad
                   return (
-                    <tr key={idx} className={completo ? 'bg-emerald-50/50' : ''}>
+                    <tr key={idx} className={`${completo ? 'bg-emerald-50/50' : ''} ${it.esEstandar ? 'bg-blue-50/30' : ''}`}>
                       <td className="px-4 py-2.5">
-                        <p className="font-medium text-gray-800">{it.descripcion}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-medium text-gray-800">{it.descripcion}</p>
+                          {it.esEstandar && <span className="text-[9px] bg-blue-100 text-blue-600 font-semibold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Estándar</span>}
+                        </div>
                         {it.talla && <p className="text-gray-400 text-[10px]">Talla: {it.talla}</p>}
                         {completo && <span className="text-[10px] text-emerald-600 font-medium">✓ Completo</span>}
                       </td>

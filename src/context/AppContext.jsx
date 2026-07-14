@@ -812,6 +812,25 @@ function reducer(state, action) {
       next = { ...state, uniformeDevoluciones: (state.uniformeDevoluciones||[]).filter(d => d.id !== action.id) }; break
 
     case 'DERIVAR_KIT_INGRESO': {
+      const ITEMS_ESTANDAR_KIT = [
+        { descripcion: 'Paño Verde',      talla: '', cantidad: 1 },
+        { descripcion: 'Paño Rojo',       talla: '', cantidad: 1 },
+        { descripcion: 'Paño Azul',       talla: '', cantidad: 1 },
+        { descripcion: 'Paño Amarillo',   talla: '', cantidad: 1 },
+        { descripcion: 'Trapeador Verde',  talla: '', cantidad: 1 },
+        { descripcion: 'Trapeador Rojo',   talla: '', cantidad: 1 },
+        { descripcion: 'Trapeador Azul',   talla: '', cantidad: 1 },
+        { descripcion: 'Trapeador Amarillo', talla: '', cantidad: 1 },
+      ].map(it => ({ ...it, id: genId(), cantNuevo: 0, cantUsado: 0, esEstandar: true }))
+      const itemsREQ = (action.items || []).map(it => ({
+        id:          it.id,
+        descripcion: it.descripcion || it.nombre || '',
+        talla:       it.talla || '',
+        cantidad:    Number(it.cantidadAprobada || it.cantidad || 1),
+        cantNuevo:   0,
+        cantUsado:   0,
+        esEstandar:  false,
+      }))
       const kitNuevo = {
         id: genId(),
         reqId:      action.reqId,
@@ -821,14 +840,7 @@ function reducer(state, action) {
         area:       action.area,
         derivadoPor: action.derivadoPor,
         fechaDerivado: action.fecha,
-        items: (action.items || []).map(it => ({
-          id:          it.id,
-          descripcion: it.descripcion || it.nombre || '',
-          talla:       it.talla || '',
-          cantidad:    Number(it.cantidadAprobada || it.cantidad || 1),
-          cantNuevo:   0,
-          cantUsado:   0,
-        })),
+        items: [...itemsREQ, ...ITEMS_ESTANDAR_KIT],
         estado:    'Pendiente',
         despachos: [],
       }
