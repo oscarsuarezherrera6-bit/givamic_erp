@@ -403,6 +403,15 @@ export default function Dashboard() {
     return { valor: Math.round((conformes / servicios.length) * 100), conformes, total: servicios.length }
   }, [conformidades])
 
+  const kpiTiempoDesviacion = useMemo(() => {
+    const desviaciones = (conformidades || []).filter(c => c.resultado === 'No Conforme' && c.fecha && c.fechaCierre)
+    if (!desviaciones.length) return null
+    const diffs = desviaciones.map(c => (new Date(c.fechaCierre) - new Date(c.fecha)) / 86400000).filter(d => d >= 0)
+    if (!diffs.length) return null
+    const promedio = diffs.reduce((s, d) => s + d, 0) / diffs.length
+    return { valor: Math.round(promedio * 10) / 10, total: diffs.length }
+  }, [conformidades])
+
   // ── Gasto chart 6 meses ──────────────────────────────────────────────────
   const gastoChart = useMemo(() =>
     Array.from({ length: 6 }, (_, i) => {
@@ -674,7 +683,7 @@ export default function Dashboard() {
             <p className="text-[10px] text-gray-400">SIG-FO-093 · Logística y Compras</p>
           </div>
           <span className="text-[10px] bg-[#1e3a5f]/10 text-[#1e3a5f] font-semibold px-2 py-0.5 rounded-full">
-            {[kpiReqAtendidos, kpiReqObservados, kpiBienesConformes, kpiTiempoProveedor, kpiCotizaciones3Prov, kpiTiempoREQ, kpiOCUrgentes, kpiServiciosConformes]
+            {[kpiReqAtendidos, kpiReqObservados, kpiBienesConformes, kpiTiempoProveedor, kpiCotizaciones3Prov, kpiTiempoREQ, kpiOCUrgentes, kpiServiciosConformes, kpiTiempoDesviacion]
               .filter(k => {
                 if (!k) return false
                 const val = k.valor
@@ -682,8 +691,9 @@ export default function Dashboard() {
                 if (k === kpiTiempoProveedor) return val <= 5
                 if (k === kpiTiempoREQ) return val <= 7
                 if (k === kpiOCUrgentes) return val <= 20
+                if (k === kpiTiempoDesviacion) return val <= 10
                 return val >= 95
-              }).length} / 8 KPIs en meta
+              }).length} / 9 KPIs en meta
           </span>
         </div>
         <div className="grid gap-3" style={{ gridTemplateColumns: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))' }}>
@@ -757,6 +767,15 @@ export default function Dashboard() {
               meta={95} sentido="mayor"
               sub={kpiServiciosConformes ? `${kpiServiciosConformes.conformes}/${kpiServiciosConformes.total} servicios` : undefined}
               descripcion="Servicios conformes en 1ª recepción"
+            />
+          )}
+          {puedeVer('almacen') && (
+            <KpiCard
+              label="Cierre de Desviaciones"
+              valor={kpiTiempoDesviacion?.valor ?? null}
+              unidad="días" meta={10} sentido="menor"
+              sub={kpiTiempoDesviacion ? `${kpiTiempoDesviacion.total} desviaciones resueltas` : undefined}
+              descripcion="Días promedio para cerrar una No Conformidad"
             />
           )}
         </div>

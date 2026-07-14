@@ -387,6 +387,27 @@ function ConformidadDetail({ conf, onClose }) {
         </div>
       )}
 
+      {/* Resolución de desviación */}
+      {conf.resultado === 'No Conforme' && (
+        conf.fechaCierre
+          ? <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700">
+              <CheckCircleIcon className="w-4 h-4 shrink-0 text-green-600" />
+              <span>Desviación resuelta el <strong>{fmtDate(conf.fechaCierre)}</strong></span>
+            </div>
+          : <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center justify-between">
+              <p className="text-xs text-red-700 font-medium">Desviación pendiente de resolución</p>
+              <button
+                onClick={() => {
+                  dispatch({ type: 'UPDATE_CONFORMIDAD', id: conf.id, payload: { fechaCierre: new Date().toISOString().split('T')[0], estadoDesviacion: 'Resuelta' } })
+                  toast('Desviación marcada como resuelta')
+                }}
+                className="text-xs bg-red-600 hover:bg-red-700 text-white font-semibold px-3 py-1 rounded-lg transition-colors"
+              >
+                Marcar como Resuelta
+              </button>
+            </div>
+      )}
+
       <div className="flex justify-between pt-2 border-t border-gray-100">
         {isAdmin && <button onClick={handleDelete} className="btn-danger text-xs">Eliminar</button>}
         {!isAdmin && <div/>}
