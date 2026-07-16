@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
+import { supabase, supabaseAdmin, isSupabaseEnabled } from '../lib/supabase'
 import {
   ShieldCheckIcon, PlusIcon, PencilIcon, EyeIcon, TrashIcon,
   XMarkIcon, CheckIcon, MagnifyingGlassIcon, UserGroupIcon,
   ArrowRightIcon, Cog6ToothIcon, LockClosedIcon, NoSymbolIcon,
-  BuildingOffice2Icon,
+  BuildingOffice2Icon, KeyIcon,
 } from '@heroicons/react/24/outline'
 
 const MODULOS_DEF = [
@@ -515,6 +516,28 @@ function ModalNuevoUsuario({ usuarios = [], rolesERP = [], areas = [], onClose, 
             </div>
           </div>
           <div>
+            <label className="text-xs text-gray-500 mb-1 block">Rol del sistema *</label>
+            <select
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+              value={form.rol} onChange={e => setForm(f => ({ ...f, rol: e.target.value }))}
+            >
+              <option value="Colaborador">Colaborador</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Gerencia">Gerencia</option>
+              <option value="Coordinador Logística y Compras">Coordinador Logística y Compras</option>
+              <option value="Asistente Logística">Asistente Logística</option>
+              <option value="Coordinador General">Coordinador General</option>
+              <option value="Coordinador Operaciones">Coordinador Operaciones</option>
+              <option value="Almacenero">Almacenero</option>
+              <option value="Asistente Almacén">Asistente Almacén</option>
+              <option value="Jefe RRHH">Jefe RRHH</option>
+              <option value="Administrador de Empresa">Administrador de Empresa</option>
+              <option value="Facturación">Facturación</option>
+              <option value="Contador">Contador</option>
+              <option value="Auditor">Auditor</option>
+            </select>
+          </div>
+          <div>
             <label className="text-xs text-gray-500 mb-1 block">Perfil de acceso</label>
             <select
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
@@ -576,6 +599,90 @@ function ModalNuevoUsuario({ usuarios = [], rolesERP = [], areas = [], onClose, 
   )
 }
 
+/* ─── Modal Cambiar Contraseña ─── */
+function ModalCambiarPassword({ usuario, onClose }) {
+  const [pw, setPw]       = useState('')
+  const [pw2, setPw2]     = useState('')
+  const [loading, setLoading] = useState(false)
+  const [msg, setMsg]     = useState(null)
+
+  async function handleSave() {
+    if (!pw || pw.length < 6) return setMsg({ tipo: 'error', texto: 'Mínimo 6 caracteres' })
+    if (pw !== pw2)           return setMsg({ tipo: 'error', texto: 'Las contraseñas no coinciden' })
+    setLoading(true)
+    setMsg(null)
+    try {
+      if (!supabaseAdmin) throw new Error('Admin no disponible — verifica VITE_SUPABASE_SERVICE_KEY')
+      const { data, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ perPage: 200 })
+      if (listErr) throw listErr
+      const authUser = data.users.find(u => u.email === usuario.email)
+      if (!authUser) throw new Error('Usuario no encontrado en Supabase Auth')
+      const { error } = await supabaseAdmin.auth.admin.updateUserById(authUser.id, { password: pw })
+      if (error) throw error
+      setMsg({ tipo: 'ok', texto: 'Contraseña actualizada correctamente' })
+      setTimeout(onClose, 1500)
+    } catch (e) {
+      setMsg({ tipo: 'error', texto: e.message })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <KeyIcon className="w-5 h-5 text-indigo-500"/>
+            <span className="font-semibold text-gray-800">Cambiar contraseña</span>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><XMarkIcon className="w-5 h-5"/></button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">Usuario: <span className="font-medium text-gray-700">{usuario.email}</span></p>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Nueva contraseña</label>
+            <input
+              type="password"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              placeholder="Mínimo 6 caracteres"
+              value={pw} onChange={e => setPw(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+            />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Confirmar contraseña</label>
+            <input
+              type="password"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              placeholder="Repite la contraseña"
+              value={pw2} onChange={e => setPw2(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSave()}
+            />
+          </div>
+          {msg && (
+            <p className={`text-xs px-3 py-2 rounded-lg ${msg.tipo === 'ok' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+              {msg.texto}
+            </p>
+          )}
+          <div className="flex gap-2 pt-1">
+            <button onClick={onClose} className="flex-1 border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {loading ? 'Guardando...' : 'Guardar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Tab Usuarios ─── */
 function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDelete, onToggleActivo }) {
   const [editId, setEditId]         = useState(null)
@@ -587,6 +694,7 @@ function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDele
   const [showNuevo, setShowNuevo]   = useState(false)
   const [confirmId, setConfirmId]   = useState(null)
   const [showInactivos, setShowInactivos] = useState(false)
+  const [pwUsuario, setPwUsuario]         = useState(null)
 
   function startEdit(u) {
     setEditId(u.id)
@@ -615,6 +723,12 @@ function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDele
 
   return (
     <div className="p-6">
+      {pwUsuario && (
+        <ModalCambiarPassword
+          usuario={pwUsuario}
+          onClose={() => setPwUsuario(null)}
+        />
+      )}
       {showNuevo && (
         <ModalNuevoUsuario
           usuarios={usuarios}
@@ -793,6 +907,13 @@ function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDele
                         >
                           {u.activo === false ? <CheckIcon className="w-4 h-4"/> : <NoSymbolIcon className="w-4 h-4"/>}
                         </button>
+                        <button
+                          onClick={() => setPwUsuario(u)}
+                          title="Cambiar contraseña"
+                          className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg"
+                        >
+                          <KeyIcon className="w-4 h-4"/>
+                        </button>
                         <button onClick={() => startEdit(u)} className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg">
                           <PencilIcon className="w-4 h-4"/>
                         </button>
@@ -934,8 +1055,20 @@ export default function RolesPermisos() {
     dispatch({ type: 'UPDATE_USUARIO', id, payload: changes })
   }
 
-  function handleAddUsuario(data) {
+  async function handleAddUsuario(data) {
     dispatch({ type: 'ADD_USUARIO', payload: data })
+    if (isSupabaseEnabled && supabase) {
+      try {
+        const { error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: { data: { nombre: data.nombre, rol: data.rol } },
+        })
+        if (error) console.warn('[Supabase] No se pudo crear usuario en Auth:', error.message)
+      } catch (e) {
+        console.warn('[Supabase] Error al crear usuario:', e)
+      }
+    }
   }
 
   function handleDeleteUsuario(id) {
