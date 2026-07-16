@@ -1726,12 +1726,17 @@ export function AppProvider({ children }) {
   const stateRef = useRef(state)
   stateRef.current = state
 
+  // Ref para evitar recargar cuando somos NOSOTROS los que guardamos
+  const isSavingRef = useRef(false)
+
   // ── Supabase: guardar con debounce 800ms ──────────────────────────────
   const saveToSupabase = useMemo(() => debounce(async (data) => {
     if (!isSupabaseEnabled) return
     const { _lastVale, ...toSave } = data
     const slim = { ...toSave, facturas: (toSave.facturas || []).map(({ archivoPDF, ...f }) => f) }
+    isSavingRef.current = true
     await supabase.from('app_state').upsert({ id: 1, data: slim, updated_at: new Date().toISOString() })
+    setTimeout(() => { isSavingRef.current = false }, 1500)
   }, 800), [])
 
   // ── Supabase: cargar en mount (reemplaza localStorage si hay datos en la nube) ──
@@ -1741,6 +1746,26 @@ export function AppProvider({ children }) {
       if (error || !row?.data) return
       rawDispatch({ type: 'LOAD_FROM_SUPABASE', payload: row.data })
     })
+  }, [])
+
+  // ── Supabase Realtime: sincronización entre usuarios en tiempo real ────
+  useEffect(() => {
+    if (!isSupabaseEnabled) return
+    const channel = supabase
+      .channel('app_state_sync')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.1' },
+        (payload) => {
+          // Ignorar si fuimos nosotros quienes guardamos
+          if (isSavingRef.current) return
+          if (payload.new?.data) {
+            rawDispatch({ type: 'LOAD_FROM_SUPABASE', payload: payload.new.data })
+          }
+        }
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
   }, [])
 
   const dispatch = useCallback((action) => {
