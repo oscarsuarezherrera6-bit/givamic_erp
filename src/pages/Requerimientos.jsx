@@ -478,18 +478,16 @@ function ReqForm({ initial, sedes, productos, user, inventario, trabajadores, on
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">RESP. DE LA SOLICITUD</label>
-                <input className={`input ${user?.rol !== 'Administrador' ? 'bg-gray-50 cursor-default' : ''}`}
+                <input className="input bg-gray-50 cursor-default"
                   value={form.responsable}
-                  onChange={e => user?.rol === 'Administrador' && setF('responsable', e.target.value)}
-                  readOnly={user?.rol !== 'Administrador'}
+                  readOnly
                   placeholder="Nombre del responsable" />
               </div>
               <div>
                 <label className="text-xs font-bold text-gray-600 block mb-1">ÁREA SOLICITANTE</label>
-                <input className={`input ${user?.rol !== 'Administrador' ? 'bg-gray-50 cursor-default' : ''}`}
+                <input className="input bg-gray-50 cursor-default"
                   value={form.areaSolicitante}
-                  onChange={e => user?.rol === 'Administrador' && setF('areaSolicitante', e.target.value)}
-                  readOnly={user?.rol !== 'Administrador'}
+                  readOnly
                   placeholder="Área o departamento" />
               </div>
               <div>
