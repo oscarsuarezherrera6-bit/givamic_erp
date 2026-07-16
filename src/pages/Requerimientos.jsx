@@ -433,7 +433,8 @@ function ReqForm({ initial, sedes, productos, user, inventario, trabajadores, on
     }))
     // Coordinadores y jefes van directo al Coord General; todos los demás pasan primero por su jefe directo
     const ROLES_DIRECTOS = ['Coordinador General', 'Coordinador Operaciones', 'Coordinador Logística y Compras',
-                            'Administrador', 'Gerencia', 'Administrador de Empresa', 'Jefe RRHH']
+                            'Administrador', 'Gerencia', 'Administrador de Empresa',
+                            'Jefe RRHH', 'Jefe SOMA/SIG']
     const jefeId = ROLES_DIRECTOS.includes(user?.rol) ? null : (user?.jefeDirectoId || null)
     const estadoInicial = asBorrador ? 'Borrador' : (jefeId ? 'Pendiente Aprobación Jefe' : 'Pendiente de Aprobación')
     onSave({ ...form, items: itemsConLink, estado: estadoInicial, rolSolicitante: user?.rol || '', jefeAprobadorId: jefeId, creadorId: user?.id || '' })

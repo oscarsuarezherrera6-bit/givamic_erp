@@ -59,6 +59,26 @@ function BadgeModulos({ count, total }) {
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"><EyeIcon className="w-3 h-3"/> {count} módulos</span>
 }
 
+const ROL_OPTIONS = [
+  'Administrador',
+  'Gerencia',
+  'Administrador de Empresa',
+  'Coordinador General',
+  'Coordinador Logística y Compras',
+  'Coordinador Operaciones',
+  'Jefe RRHH',
+  'Jefe SOMA/SIG',
+  'Asistente Logística',
+  'Asistente RRHH',
+  'Asistente SOMA',
+  'Almacenero',
+  'Asistente Almacén',
+  'Facturación',
+  'Contador',
+  'Auditor',
+  'Colaborador',
+]
+
 /* ─── Modal crear/editar rol ─── */
 function ModalRol({ rol, roles, onClose, onSave }) {
   const [nombre, setNombre]       = useState(rol?.nombre || '')
@@ -521,20 +541,7 @@ function ModalNuevoUsuario({ usuarios = [], rolesERP = [], areas = [], onClose, 
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
               value={form.rol} onChange={e => setForm(f => ({ ...f, rol: e.target.value }))}
             >
-              <option value="Colaborador">Colaborador</option>
-              <option value="Administrador">Administrador</option>
-              <option value="Gerencia">Gerencia</option>
-              <option value="Coordinador Logística y Compras">Coordinador Logística y Compras</option>
-              <option value="Asistente Logística">Asistente Logística</option>
-              <option value="Coordinador General">Coordinador General</option>
-              <option value="Coordinador Operaciones">Coordinador Operaciones</option>
-              <option value="Almacenero">Almacenero</option>
-              <option value="Asistente Almacén">Asistente Almacén</option>
-              <option value="Jefe RRHH">Jefe RRHH</option>
-              <option value="Administrador de Empresa">Administrador de Empresa</option>
-              <option value="Facturación">Facturación</option>
-              <option value="Contador">Contador</option>
-              <option value="Auditor">Auditor</option>
+              {ROL_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
           <div>
@@ -706,6 +713,8 @@ function ModalCambiarPassword({ usuario, onClose, onUpdateRef }) {
 /* ─── Tab Usuarios ─── */
 function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDelete, onToggleActivo }) {
   const [editId, setEditId]         = useState(null)
+  const [nombreVal, setNombreVal]   = useState('')
+  const [rolVal, setRolVal]         = useState('')
   const [jefeVal, setJefeVal]       = useState('')
   const [rolERPVal, setRolERPVal]   = useState('')
   const [cargoVal, setCargoVal]     = useState('')
@@ -718,13 +727,22 @@ function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDele
 
   function startEdit(u) {
     setEditId(u.id)
+    setNombreVal(u.nombre || '')
+    setRolVal(u.rol || '')
     setJefeVal(u.jefeDirectoId || '')
     setRolERPVal(u.rolERPId || '')
     setCargoVal(u.cargo || '')
     setAreaVal(u.area || '')
   }
   function saveEdit(u) {
-    onUpdate(u.id, { jefeDirectoId: jefeVal || null, rolERPId: rolERPVal || null, cargo: cargoVal, area: areaVal })
+    onUpdate(u.id, {
+      nombre:        nombreVal.trim() || u.nombre,
+      rol:           rolVal || u.rol,
+      jefeDirectoId: jefeVal || null,
+      rolERPId:      rolERPVal || null,
+      cargo:         cargoVal,
+      area:          areaVal
+    })
     setEditId(null)
   }
   function handleDelete(id) {
@@ -812,14 +830,35 @@ function TabUsuarios({ usuarios, rolesERP, areas, onUpdate, onAddUsuario, onDele
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${u.activo === false ? 'bg-gray-100 text-gray-400' : 'bg-indigo-100 text-indigo-600'}`}>
-                        {u.nombre?.charAt(0)?.toUpperCase()}
+                        {(isEditing ? nombreVal : u.nombre)?.charAt(0)?.toUpperCase()}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <p className={`font-semibold text-sm ${u.activo === false ? 'text-gray-400' : 'text-gray-800'}`}>{u.nombre}</p>
-                          {u.activo === false && <span className="text-xs bg-red-50 text-red-400 px-1.5 py-0.5 rounded font-medium">Inactivo</span>}
-                        </div>
-                        <p className="text-xs text-gray-400">{u.email}</p>
+                      <div className="flex-1 min-w-0">
+                        {isEditing ? (
+                          <div className="flex flex-col gap-1.5">
+                            <input
+                              value={nombreVal}
+                              onChange={e => setNombreVal(e.target.value)}
+                              placeholder="Nombre completo"
+                              className="border border-indigo-200 rounded-lg px-2 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                            />
+                            <select
+                              value={rolVal}
+                              onChange={e => setRolVal(e.target.value)}
+                              className="border border-indigo-200 rounded-lg px-2 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+                            >
+                              {ROL_OPTIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className={`font-semibold text-sm ${u.activo === false ? 'text-gray-400' : 'text-gray-800'}`}>{u.nombre}</p>
+                              {u.activo === false && <span className="text-xs bg-red-50 text-red-400 px-1.5 py-0.5 rounded font-medium">Inactivo</span>}
+                            </div>
+                            <p className="text-xs text-gray-400">{u.email}</p>
+                            {u.rol && <p className="text-xs text-indigo-500 font-medium mt-0.5">{u.rol}</p>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </td>
