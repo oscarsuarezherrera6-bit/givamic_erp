@@ -1761,17 +1761,34 @@ export function AppProvider({ children }) {
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.1' },
         (payload) => {
-          console.log('[GIVAMIC] Realtime UPDATE recibido, isSaving:', isSavingRef.current)
-          // Ignorar si fuimos nosotros quienes guardamos
           if (isSavingRef.current) return
           if (payload.new?.data) {
-            console.log('[GIVAMIC] Aplicando datos Realtime — reqs:', payload.new.data.requerimientos?.length)
             rawDispatch({ type: 'LOAD_FROM_SUPABASE', payload: payload.new.data })
           }
         }
       )
-      .subscribe((status) => { console.log('[GIVAMIC] Realtime status:', status) })
+      .subscribe()
     return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  // ── Polling cada 8s — respaldo garantizado si Realtime falla ─────────────
+  const lastUpdatedRef = useRef(null)
+  useEffect(() => {
+    if (!isSupabaseEnabled) return
+    const poll = async () => {
+      if (isSavingRef.current) return
+      const { data: row, error } = await supabase
+        .from('app_state')
+        .select('data, updated_at')
+        .eq('id', 1)
+        .single()
+      if (error || !row?.data) return
+      if (lastUpdatedRef.current && row.updated_at <= lastUpdatedRef.current) return
+      lastUpdatedRef.current = row.updated_at
+      rawDispatch({ type: 'LOAD_FROM_SUPABASE', payload: row.data })
+    }
+    const id = setInterval(poll, 8000)
+    return () => clearInterval(id)
   }, [])
 
   const dispatch = useCallback((action) => {
