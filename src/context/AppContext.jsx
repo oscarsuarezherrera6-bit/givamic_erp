@@ -1771,11 +1771,11 @@ export function AppProvider({ children }) {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  // ── Polling cada 8s — respaldo garantizado si Realtime falla ─────────────
+  // ── Carga inmediata + Polling cada 8s ────────────────────────────────────
   const lastUpdatedRef = useRef(null)
   useEffect(() => {
     if (!isSupabaseEnabled) return
-    const poll = async () => {
+    const load = async () => {
       if (isSavingRef.current) return
       const { data: row, error } = await supabase
         .from('app_state')
@@ -1787,7 +1787,8 @@ export function AppProvider({ children }) {
       lastUpdatedRef.current = row.updated_at
       rawDispatch({ type: 'LOAD_FROM_SUPABASE', payload: row.data })
     }
-    const id = setInterval(poll, 8000)
+    load() // carga inmediata al montar
+    const id = setInterval(load, 8000)
     return () => clearInterval(id)
   }, [])
 
