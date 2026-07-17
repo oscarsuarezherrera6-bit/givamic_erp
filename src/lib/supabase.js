@@ -17,7 +17,12 @@ export const supabase = (supabaseUrl && supabaseAnonKey)
  */
 export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
   ? createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { autoRefreshToken: false, persistSession: false }
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+        storageKey: 'givamic-admin-sb',   // key distinto para no pisar la sesión del cliente normal
+      }
     })
   : null
 
